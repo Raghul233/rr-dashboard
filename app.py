@@ -5,7 +5,13 @@ import streamlit as st
 st.set_page_config(page_title="R&R Dashboard", layout="wide")
 st.title("🏆 Rewards & Recognition Dashboard")
 
-EXPECTED_FILE = "L1 Ops - Rewards & Recognition - 2025 - Day_Month.csv"
+SHEET_CSV_URL = st.secrets["https://docs.google.com/spreadsheets/d/1Eea9Md0dIFHKP5kM51doAt42lhH0qh7CdHIB5MsvPFI/edit?gid=0#gid=0"]  # put this in Streamlit Cloud secrets
+
+@st.cache_data(ttl=300)  # refresh every 5 minutes
+def load_from_sheet():
+    df = pd.read_csv(SHEET_CSV_URL)
+    df.columns = [c.strip() for c in df.columns]
+    return df
 
 # Fiscal year: FEB -> JAN
 MONTH_TO_QUARTER = {
@@ -258,3 +264,4 @@ with tab2:
         file_name="recognitions_filtered.csv",
         mime="text/csv",
     )
+
