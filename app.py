@@ -158,7 +158,7 @@ tab1, tab2 = st.tabs(["🏅 Leaderboard", "📊 Dashboard"])
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
     st.subheader("🏅 Leaderboard (Quarter → Month → People)")
-    st.caption("Counts = number of recognitions in the CSV. Quarter totals are auto-calculated.")
+    st.caption("Counts = number of recognitions in the month. Quarter totals are auto-calculated.")
 
     all_people = sorted(df["Name"].dropna().unique().tolist(), key=lambda s: s.lower())
 
@@ -223,7 +223,7 @@ with tab2:
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
-    st.subheader("🧾 All Entries")
+    st.subheader("🧾 All Entries - Recognitions")
 
     view_df = make_clickable_links(filtered)
 
@@ -258,5 +258,6 @@ with tab2:
         file_name="recognitions_filtered.csv",
         mime="text/csv",
     )
+
 
 
