@@ -189,5 +189,23 @@ with tab2:
     st.subheader("🏅 Leaderboard (Quarter → Month → People)")
     st.caption("Counts = number of recognitions in the CSV. Quarter totals are auto-calculated.")
 
-    # Optional: choose which people (columns) to show and in what order
-    all_people = sorted(df["Name"].dropna().unique()._
+    all_people = sorted(df["Name"].dropna().unique().tolist(), key=lambda s: s.lower())
+
+    selected_people = st.multiselect(
+        "Select people (controls columns + order)",
+        options=all_people,
+        default=all_people,
+    )
+
+    lb = build_leaderboard(df[df["Name"].isin(selected_people)], people_order=selected_people)
+
+    st.dataframe(lb, use_container_width=True, hide_index=True)
+
+    st.download_button(
+        "⬇️ Download Leaderboard CSV",
+        data=lb.to_csv(index=False).encode("utf-8"),
+        file_name="leaderboard.csv",
+        mime="text/csv",
+    )
+
+
