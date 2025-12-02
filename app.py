@@ -144,7 +144,7 @@ def build_leaderboard(df: pd.DataFrame, people_order=None) -> pd.DataFrame:
 df_raw = load_data()
 df = normalize(df_raw)
 
-tab1, tab2 = st.tabs(["📊 Dashboard", "🏅 Leaderboard"])
+tab1, tab2 = st.tabs(["🏅 Leaderboard", "📊 Dashboard"])
 
 with tab1:
     st.subheader("🏅 Leaderboard (Quarter → Month → People)")
@@ -212,4 +212,5 @@ with tab2:
     st.dataframe(filtered, use_container_width=True, hide_index=True)
 
     
+
 
