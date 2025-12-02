@@ -154,7 +154,7 @@ tab1, tab2 = st.tabs(["🏅 Leaderboard", "📊 Dashboard"])
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
     st.subheader(f"🏅 Leaderboard — {selected_year}")
-    st.caption("Counts = number of recognitions in the selected year. Quarter totals auto-calculated.")
+    st.caption("Counts = number of recognitions for the Month in the selected year. Quarter totals auto-calculated.")
 
     all_people = sorted(dfy["Name"].dropna().unique().tolist(), key=lambda s: s.lower())
     selected_people = st.multiselect(
@@ -252,4 +252,5 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
