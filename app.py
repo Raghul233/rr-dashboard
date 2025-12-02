@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(page_title="R&R Dashboard", layout="wide")
-st.title("🏆 Rewards & Recognition Dashboard")
+st.title("🏆 Rewards & Recognition Dashboard - L1 Ops")
 
 EXPECTED_FILE = "L1 Ops - Rewards & Recognition - 2025 - Day_Month.csv"
 
@@ -258,6 +258,7 @@ with tab2:
         file_name="recognitions_filtered.csv",
         mime="text/csv",
     )
+
 
 
 
