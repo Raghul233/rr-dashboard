@@ -9,25 +9,28 @@ EXPECTED_FILE = "L1 Ops - Rewards & Recognition - 2025 - Day_Month.csv"
 
 # --- Quarter mapping (edit if your fiscal quarters differ) ---
 MONTH_TO_QUARTER = {
-    "JANUARY": "Q4",
-    "FEBRUARY": "Q4",
-    "MARCH": "Q4",
+    "FEBRUARY": "Q1",
+    "MARCH": "Q1",
     "APRIL": "Q1",
-    "MAY": "Q1",
-    "JUNE": "Q1",
+
+    "MAY": "Q2",
+    "JUNE": "Q2",
     "JULY": "Q2",
-    "AUGUST": "Q2",
+
+    "AUGUST": "Q3",
     "SEPTEMBER": "Q3",
     "OCTOBER": "Q3",
+
     "NOVEMBER": "Q4",
     "DECEMBER": "Q4",
+    "JANUARY": "Q4",
 }
 
 MONTH_ORDER = [
-    "APRIL","MAY","JUNE",
-    "JULY","AUGUST","SEPTEMBER",
-    "OCTOBER","NOVEMBER","DECEMBER",
-    "JANUARY","FEBRUARY","MARCH",
+    "FEBRUARY","MARCH","APRIL",
+    "MAY","JUNE","JULY",
+    "AUGUST","SEPTEMBER","OCTOBER",
+    "NOVEMBER","DECEMBER","JANUARY",
 ]
 
 @st.cache_data
@@ -209,3 +212,4 @@ with tab2:
     st.dataframe(filtered, use_container_width=True, hide_index=True)
 
     
+
