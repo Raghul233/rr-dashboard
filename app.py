@@ -225,7 +225,7 @@ with tab2:
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
-    st.subheader("🧾 All Recognitions for the year")
+    st.subheader(f"🧾 All Recognitions — {selected_year}")
 
     slack_col = find_slack_col(filtered.columns)
 
@@ -252,3 +252,4 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
