@@ -223,7 +223,7 @@ with tab2:
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
-    st.subheader("🧾 All Entries - Recognitions")
+    st.subheader("🧾 All Recognitions from September")
 
     view_df = make_clickable_links(filtered)
 
@@ -258,6 +258,7 @@ with tab2:
         file_name="recognitions_filtered.csv",
         mime="text/csv",
     )
+
 
 
 
