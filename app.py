@@ -235,6 +235,10 @@ with tab2:
     slack_col = find_slack_col(filtered.columns)
 
     if slack_col:
+        
+        filtered[slack_col] = filtered[slack_col].fillna("").astype(str).str.strip()
+    filtered[slack_col] = filtered[slack_col].apply(lambda x: x if x.startswith("http") else "")
+    
         st.data_editor(
             filtered,
             use_container_width=True,
@@ -257,6 +261,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
