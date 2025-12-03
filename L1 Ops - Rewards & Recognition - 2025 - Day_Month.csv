@@ -1,26 +1,27 @@
 Year,Month,Week,Date,Name,Slack Link,Contribution Category,Comments,ACK if any
 2025,SEPTEMBER,Week 1,3-Sep,Prakash,https://everstage.slack.com/archives/C04F5S9T2RL/p1756843042785069?thread_ts=1756842041.398249&cid=C04F5S9T2RL,Sev-3,Good Finding,Sriram
-2025,SEPTEMBER,Week 2,9-Sep,Asir,Link,Sev-3,RCA & L1 Resolved,NA
-2025,SEPTEMBER,Week 2,12-Sep,Monica,Link,Sev-3,RCA & L1 Resolved,Kavin (G10X)
-2025,SEPTEMBER,Week 3,15-Sep,Sindu,Link,Sev-3,RCA & L1 Resolved,Sanjeev (PL)
-2025,SEPTEMBER,Week 3,18-Sep,Prasanth,Link,Sev-3,Good Finding,Kishore D (G10X)
-2025,SEPTEMBER,Week 4,22-Sep,Monica,Link,Sev-3,RCA & L1 Resolved,Naveen (LP)
-2025,SEPTEMBER,Week 4,24-Sep,Sindu,Link,Sev-3,RCA & L1 Resolved,Karthik (G10X)
-2025,OCTOBER,Week 2,6-Oct,Prasanth,Link,Datadog KT,Documented Datadog & Good KT session,Sujithra (QA)
-2025,OCTOBER,Week 2,6-Oct,Prakash,Link,Datadog KT,Documented Datadog & Good KT session,Sujithra (QA)
-2025,OCTOBER,Week 2,8-Oct,Monica,Link,Sev-3,RCA & L1 Resolved,Ram (Solutions)
-2025,OCTOBER,Week 2,8-Oct,Adithya,Link,Sev-3,RCA & L1 Resolved,NA
-2025,OCTOBER,Week 4,21-Oct,Prasanth,Link,Sev-3,Good Finding,Saketh (G10X)
-2025,OCTOBER,Week 5,30-Oct,Sindu,Link,Sev-3,RCA & L1 Resolved,GowriShankar (RC)
-2025,OCTOBER,Week 5,30-Oct,Monica,Link,Sev-3,RCA added by L1,Srinidi V (PL)
-2025,NOVEMBER,Week 1,07-Nov,Monica,Link,Sev-3,RCA & L1 Resolved,Aravind RM (AC)
-2025,NOVEMBER,Week 2,10-Nov,Sindu,Link,BAU,Good Finding,NA
-2025,NOVEMBER,Week 2,11-Nov,Prasanth,Link,Sev-3,RCA added by L1,Srinidi V (PL)
-2025,NOVEMBER,Week 2,14-Nov,Adithya,Link,Sev-3,RCA & L1 Resolved,Srinidi V (PL)
-2025,NOVEMBER,Week 3,17-Nov,Monica,Link,Sev-3,Good Finding,Ganesh G (RP)
-2025,NOVEMBER,Week 3,20-Nov,Prakash,Link,BAU,RCA added by L1,Surya Prakash (LP)
-2025,NOVEMBER,Week 4,25-Nov,Asir,Link,Sev-3,RCA & L1 Resolved,Thiyaneswar (LP)
-2025,DECEMBER,Week 1,01-Dec,Monica,Link,Sev-2,Good Finding,Yogeshwar (PL)
-2025,DECEMBER,Week 1,01-Dec,Prakash,Link,LiteV2 Value Mismatch,RCA added by L1,Kishore D (G10X)
-2025,DECEMBER,Week 1,01-Dec,Adithya,Link,LiteV2 Value Mismatch,Documentation,NA
+2025,SEPTEMBER,Week 2,9-Sep,Asir,https://everstage.slack.com/archives/C04F5S9T2RL/p1757367949088099?thread_ts=1757367187.206449&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,NA
+2025,SEPTEMBER,Week 2,12-Sep,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1757673603319799?thread_ts=1757670511.601879&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Kavin (G10X)
+2025,SEPTEMBER,Week 3,15-Sep,Sindu,https://everstage.slack.com/archives/C04F5S9T2RL/p1757939213297299?thread_ts=1757937121.290699&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Sanjeev (PL)
+2025,SEPTEMBER,Week 3,18-Sep,Prasanth,https://everstage.slack.com/archives/C04F5S9T2RL/p1758204554227519?thread_ts=1758202050.710839&cid=C04F5S9T2RL,Sev-3,Good Finding,Kishore D (G10X)
+2025,SEPTEMBER,Week 4,22-Sep,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1758555364910069?thread_ts=1758549744.218029&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Naveen (LP)
+2025,SEPTEMBER,Week 4,24-Sep,Sindu,https://everstage.slack.com/archives/C04F5S9T2RL/p1758713890145119?thread_ts=1758712922.000099&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Karthik (G10X)
+2025,OCTOBER,Week 2,6-Oct,Prasanth,https://everstage.slack.com/archives/C08B32NE7FH/p1759755928355849,Datadog KT,Documented Datadog & Good KT session,Sujithra (QA)
+2025,OCTOBER,Week 2,6-Oct,Prakash,https://everstage.slack.com/archives/C08B32NE7FH/p1759755928355849,Datadog KT,Documented Datadog & Good KT session,Sujithra (QA)
+2025,OCTOBER,Week 2,8-Oct,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1759914642923459?thread_ts=1759912988.202239&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Ram (Solutions)
+2025,OCTOBER,Week 2,8-Oct,Adithya,https://everstage.slack.com/archives/C04F5S9T2RL/p1759947021584689,Sev-3,RCA & L1 Resolved,NA
+2025,OCTOBER,Week 4,21-Oct,Prasanth,https://everstage.slack.com/archives/C04F5S9T2RL/p1761037510664989?thread_ts=1761034395.515909&cid=C04F5S9T2RL,Sev-3,Good Finding,Saketh (G10X)
+2025,OCTOBER,Week 5,30-Oct,Sindu,https://everstage.slack.com/archives/C04F5S9T2RL/p1761775591895139?thread_ts=1761765789.395409&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,GowriShankar (RC)
+2025,OCTOBER,Week 5,30-Oct,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1761814190793759?thread_ts=1761804434.468879&cid=C04F5S9T2RL,Sev-3,RCA added by L1,Srinidi V (PL)
+2025,NOVEMBER,Week 1,07-Nov,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1762457709962739,Sev-3,RCA & L1 Resolved,Aravind RM (AC)
+2025,NOVEMBER,Week 2,10-Nov,Sindu,https://everstage.slack.com/archives/C04FRFVNEQ1/p1762793684158609?thread_ts=1762790579.518639&cid=C04FRFVNEQ1,BAU,Good Finding,NA
+2025,NOVEMBER,Week 2,11-Nov,Prasanth,https://everstage.slack.com/archives/C04F5S9T2RL/p1762806061741919?thread_ts=1762802739.626679&cid=C04F5S9T2RL,Sev-3,RCA added by L1,Srinidi V (PL)
+2025,NOVEMBER,Week 2,14-Nov,Adithya,https://everstage.slack.com/archives/C04F5S9T2RL/p1763079670978399,Sev-3,RCA & L1 Resolved,Srinidi V (PL)
+2025,NOVEMBER,Week 3,17-Nov,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1763402196596309,Sev-3,Good Finding,Ganesh G (RP)
+2025,NOVEMBER,Week 3,20-Nov,Prakash,https://everstage.slack.com/archives/C04FRFVNEQ1/p1763648931433309?thread_ts=1763648430.299369&cid=C04FRFVNEQ1,BAU,RCA added by L1,Surya Prakash (LP)
+2025,NOVEMBER,Week 4,25-Nov,Asir,https://everstage.slack.com/archives/C04F5S9T2RL/p1764076882788389,Sev-3,RCA & L1 Resolved,Thiyaneswar (LP)
+2025,DECEMBER,Week 1,01-Dec,Monica,https://everstage.slack.com/archives/C04G25KNL3S/p1764619166011659,Sev-2,Good Finding,Yogeshwar (PL)
+2025,DECEMBER,Week 1,01-Dec,Prakash,https://docs.google.com/spreadsheets/d/1iTS5pT7TfbSbEHJNrTJfPlZmtGumoSWtAZ-mgsyB0-8/edit?gid=284213259#gid=284213259,LiteV2 Value Mismatch,RCA added by L1,Kishore D (G10X)
+2025,DECEMBER,Week 1,01-Dec,Adithya,https://interstage.atlassian.net/wiki/spaces/TECH/pages/1579614215/Value+Mismatch+RCA+-+Pre-Prod+Dry+run,LiteV2 Value Mismatch,Documentation,NA
+
 
