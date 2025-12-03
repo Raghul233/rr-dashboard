@@ -3,7 +3,12 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(page_title="R&R Dashboard", layout="wide")
-st.title("🏆 Rewards & Recognition - L1 Ops")
+
+CONFLUENCE_URL = "https://interstage.atlassian.net/wiki/spaces/TECH/pages/1289682984/L1+Tech+Ops+Team+-+Rewards+Recognition+Program"
+
+st.title("🏆 Rewards & Recognition Dashboard")
+st.caption(f"📘 Program details (reward categories + eligibility): {CONFLUENCE_URL}")
+
 
 EXPECTED_FILE = "L1 Ops - Rewards & Recognition - 2025 - Day_Month.csv"
 
@@ -252,6 +257,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
