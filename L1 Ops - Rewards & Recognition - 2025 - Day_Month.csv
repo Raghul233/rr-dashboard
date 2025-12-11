@@ -23,6 +23,8 @@ Year,Month,Week,Date,Name,Slack Link,Contribution Category,Comments,ACK if any
 2025,DECEMBER,Week 1,01-Dec,Monica,https://everstage.slack.com/archives/C04G25KNL3S/p1764619166011659,Sev-2,Good Finding,Yogeshwar (PL)
 2025,DECEMBER,Week 1,01-Dec,Prakash,https://docs.google.com/spreadsheets/d/1iTS5pT7TfbSbEHJNrTJfPlZmtGumoSWtAZ-mgsyB0-8/edit?gid=284213259#gid=284213259,LiteV2 Value Mismatch,RCA added by L1,Kishore D (G10X)
 2025,DECEMBER,Week 1,01-Dec,Adithya,https://interstage.atlassian.net/wiki/spaces/TECH/pages/1579614215/Value+Mismatch+RCA+-+Pre-Prod+Dry+run,LiteV2 Value Mismatch,Documentation,NA
+2025,DECEMBER,Week 1,04-Dec,Prasanth,https://everstage.slack.com/archives/C04F5S9T2RL/p1764797856126349,Sev-3,Good Finding,Shyam (LP)
 2025,DECEMBER,Week 2,10-Dec,Monica,https://everstage.slack.com/archives/C04F5S9T2RL/p1765384757856659?thread_ts=1765380286.419439&cid=C04F5S9T2RL,Sev-3,RCA & L1 Resolved,Hari (AC)
+
 
 
