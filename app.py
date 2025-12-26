@@ -85,6 +85,19 @@ def build_leaderboard(df: pd.DataFrame, people_order=None) -> pd.DataFrame:
         m = str(m).upper()
         return MONTH_ORDER.index(m) if m in MONTH_ORDER else 999
 
+    # ... rest of build_leaderboard ...
+    return out
+
+
+def highlight_quarter_totals(row):
+    """
+    Highlight rows like 'Q3 TOTAL', 'Q4 TOTAL'
+    """
+    if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
+        return ["background-color: #2a2f45; font-weight: bold"] * len(row)
+    return [""] * len(row)
+
+
     if len(pivot.index) > 0:
         ordered_pairs = sorted(
             pivot.index.tolist(),
@@ -257,6 +270,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
