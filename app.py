@@ -164,20 +164,35 @@ tab1, tab2 = st.tabs(["🏅 Leaderboard", "📊 Dashboard"])
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
     st.subheader(f"🏅 Leaderboard — {selected_year}")
-    st.caption("Counts = number of recognitions for the Month in the selected year. Quarter totals auto-calculated.")
+    st.caption(
+        "Counts = number of recognitions for the Month in the selected year. "
+        "Quarter totals auto-calculated."
+    )
 
-    all_people = sorted(dfy["Name"].dropna().unique().tolist(), key=lambda s: s.lower())
+    all_people = sorted(
+        dfy["Name"].dropna().unique().tolist(),
+        key=lambda s: s.lower()
+    )
+
     selected_people = st.multiselect(
         "Select people (controls columns + order)",
         options=all_people,
         default=all_people,
     )
 
-    lb = build_leaderboard(dfy[dfy["Name"].isin(selected_people)], people_order=selected_people)
+    lb = build_leaderboard(
+        dfy[dfy["Name"].isin(selected_people)],
+        people_order=selected_people,
+    )
 
-  styled_lb = lb.style.apply(highlight_quarter_totals, axis=1)
-st.dataframe(styled_lb, use_container_width=True, hide_index=True)
+    # ✅ Apply row highlighting for TOTAL rows
+    styled_lb = lb.style.apply(highlight_quarter_totals, axis=1)
 
+    st.dataframe(
+        styled_lb,
+        use_container_width=True,
+        hide_index=True,
+    )
 
     st.download_button(
         "⬇️ Download Leaderboard CSV",
@@ -185,6 +200,7 @@ st.dataframe(styled_lb, use_container_width=True, hide_index=True)
         file_name=f"leaderboard_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 # ---------- Tab 2: Dashboard ----------
 with tab2:
@@ -264,6 +280,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
