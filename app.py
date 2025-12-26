@@ -202,8 +202,8 @@ with tab1:
         dfy[dfy["Name"].isin(selected_people)],
         people_order=selected_people,
     )
-    
-   styled_lb = (
+
+    styled_lb = (
         lb.style
           .apply(highlight_quarter_totals, axis=1)
           .apply(highlight_top_scorer, axis=1)
@@ -304,6 +304,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
