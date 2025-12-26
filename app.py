@@ -134,10 +134,28 @@ def build_leaderboard(df: pd.DataFrame, people_order=None) -> pd.DataFrame:
 
     return out
 
-def highlight_quarter_totals(row):
-    if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
-        return ["background-color: #6b7280; color: white; font-weight: 700; border-top: 1px solid #999"] * len(row)
-    return [""] * len(row)
+def highlight_top_scorer(row):
+    """
+    Highlight top scorer(s) in quarter TOTAL rows by font color only.
+    """
+    if not (isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL")):
+        return [""] * len(row)
+
+    styles = [""] * len(row)
+
+    # numeric columns only (exclude QUARTER, MONTH)
+    numeric_vals = row.iloc[2:]
+    if numeric_vals.empty:
+        return styles
+
+    max_val = numeric_vals.max()
+
+    for i, v in enumerate(row):
+        # i >= 2 ensures we only style person columns
+        if i >= 2 and v == max_val and max_val > 0:
+            styles[i] = "color: #d32f2f; font-weight: 700"
+
+    return styles
 
 def find_slack_col(columns):
     for c in columns:
@@ -185,10 +203,10 @@ with tab1:
         people_order=selected_people,
     )
 
-    # ✅ Apply row highlighting for TOTAL rows + bold header
-    styled_lb = (
+     styled_lb = (
         lb.style
           .apply(highlight_quarter_totals, axis=1)
+          .apply(highlight_top_scorer, axis=1)
           .set_table_styles(
               [{"selector": "thead th", "props": [("font-weight", "bold")]}]
           )
@@ -286,6 +304,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
