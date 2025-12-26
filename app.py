@@ -202,6 +202,7 @@ with tab1:
         dfy[dfy["Name"].isin(selected_people)],
         people_order=selected_people,
     )
+    
    styled_lb = (
         lb.style
           .apply(highlight_quarter_totals, axis=1)
