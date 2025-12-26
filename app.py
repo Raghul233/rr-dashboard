@@ -153,7 +153,7 @@ def highlight_top_scorer(row):
     for i, v in enumerate(row):
         # i >= 2 ensures we only style person columns
         if i >= 2 and v == max_val and max_val > 0:
-            styles[i] = "color: #d32f2f; font-weight: 700"
+            styles[i] = "color: #f1c40f; font-weight: 700"
 
     return styles
 
@@ -310,6 +310,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
