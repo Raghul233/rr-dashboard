@@ -85,19 +85,6 @@ def build_leaderboard(df: pd.DataFrame, people_order=None) -> pd.DataFrame:
         m = str(m).upper()
         return MONTH_ORDER.index(m) if m in MONTH_ORDER else 999
 
-    # ... rest of build_leaderboard ...
-    return out
-
-
-def highlight_quarter_totals(row):
-    """
-    Highlight rows like 'Q3 TOTAL', 'Q4 TOTAL'
-    """
-    if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
-        return ["background-color: #2a2f45; font-weight: bold"] * len(row)
-    return [""] * len(row)
-
-
     if len(pivot.index) > 0:
         ordered_pairs = sorted(
             pivot.index.tolist(),
@@ -147,6 +134,11 @@ def highlight_quarter_totals(row):
 
     return out
 
+def highlight_quarter_totals(row):
+    if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
+        return ["background-color: #2a2f45; font-weight: bold"] * len(row)
+    return [""] * len(row)
+
 def find_slack_col(columns):
     for c in columns:
         if c.strip().lower() in ["slack link", "slack", "slack_url", "slack url"]:
@@ -183,7 +175,9 @@ with tab1:
 
     lb = build_leaderboard(dfy[dfy["Name"].isin(selected_people)], people_order=selected_people)
 
-    st.dataframe(lb, use_container_width=True, hide_index=True)
+  styled_lb = lb.style.apply(highlight_quarter_totals, axis=1)
+st.dataframe(styled_lb, use_container_width=True, hide_index=True)
+
 
     st.download_button(
         "⬇️ Download Leaderboard CSV",
@@ -270,6 +264,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
