@@ -136,7 +136,7 @@ def build_leaderboard(df: pd.DataFrame, people_order=None) -> pd.DataFrame:
 
 def highlight_quarter_totals(row):
     if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
-        return ["background-color: #eef1f6; color: white; font-weight: 700; border-top: 1px solid #999"] * len(row)
+        return ["background-color: #6f5a3c; color: white; font-weight: 700; border-top: 1px solid #999"] * len(row)
     return [""] * len(row)
 
 def find_slack_col(columns):
@@ -286,6 +286,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
