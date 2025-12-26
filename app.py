@@ -157,6 +157,12 @@ def highlight_top_scorer(row):
 
     return styles
 
+def highlight_quarter_totals(row):
+    if isinstance(row.get("MONTH"), str) and row["MONTH"].endswith("TOTAL"):
+        return ["background-color: #4b5d73; color: white; font-weight: 700"] * len(row)
+    return [""] * len(row)
+
+
 def find_slack_col(columns):
     for c in columns:
         if c.strip().lower() in ["slack link", "slack", "slack_url", "slack url"]:
@@ -304,6 +310,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
