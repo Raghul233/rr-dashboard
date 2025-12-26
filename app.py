@@ -190,7 +190,7 @@ with tab1:
         lb.style
           .apply(highlight_quarter_totals, axis=1)
           .set_table_styles(
-              [{"selector": "th", "props": [("font-weight", "bold")]}]
+              [{"selector": "thead th", "props": [("font-weight", "bold")]}]
           )
     )
 
@@ -286,6 +286,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
