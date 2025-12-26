@@ -185,8 +185,14 @@ with tab1:
         people_order=selected_people,
     )
 
-    # ✅ Apply row highlighting for TOTAL rows
-    styled_lb = lb.style.apply(highlight_quarter_totals, axis=1)
+    # ✅ Apply row highlighting for TOTAL rows + bold header
+    styled_lb = (
+        lb.style
+          .apply(highlight_quarter_totals, axis=1)
+          .set_table_styles(
+              [{"selector": "th", "props": [("font-weight", "bold")]}]
+          )
+    )
 
     st.dataframe(
         styled_lb,
@@ -280,6 +286,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
