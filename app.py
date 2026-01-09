@@ -235,8 +235,11 @@ with tab1:
 with tab2:
     st.subheader(f"📊 Dashboard — {selected_year}")
 
-    # Filters
+    # ----------------------------
+    # Sidebar filters (global)
+    # ----------------------------
     st.sidebar.header("🔎 Filters")
+
     quarter = st.sidebar.selectbox(
         "Quarter",
         ["All"] + [q for q in ["Q1", "Q2", "Q3", "Q4"] if q in dfy["Quarter"].unique()],
@@ -261,23 +264,30 @@ with tab2:
 
     search = st.sidebar.text_input("Search (any column)", "")
 
-    # ✅ New: Month filter ONLY for Top People + Top Categories
+    # ✅ Month filter ONLY for Top People + Top Categories
     top_month = st.sidebar.selectbox(
-        "Top tables month (only for Top People/Categories)",
+        "📅 Month for Top Contributors (Top tables only)",
         ["All"] + [m for m in MONTH_ORDER if m in dfy["Month"].unique()],
         index=0,
     )
 
-    # Apply filters (global for metrics + all recognitions table)
+    # ----------------------------
+    # Apply GLOBAL filters (affects metrics + all recognitions table)
+    # ----------------------------
     filtered = dfy.copy()
+
     if quarter != "All":
         filtered = filtered[filtered["Quarter"] == quarter]
+
     if month != "All":
         filtered = filtered[filtered["Month"] == month]
+
     if category != "All":
         filtered = filtered[filtered["Contribution Category"] == category]
+
     if name != "All":
         filtered = filtered[filtered["Name"] == name]
+
     if search.strip():
         s = search.strip().lower()
         mask = (
@@ -287,36 +297,45 @@ with tab2:
         )
         filtered = filtered[mask]
 
-    # Apply top-month filter ONLY for the top tables
+    # ----------------------------
+    # Apply TOP-MONTH filter (ONLY for Top People + Top Categories)
+    # ----------------------------
     top_df = filtered.copy()
     if top_month != "All":
         top_df = top_df[top_df["Month"] == top_month]
 
-    # Summary metrics (use global filtered)
+    top_label = "All months" if top_month == "All" else top_month.title()
+
+    # ----------------------------
+    # Summary metrics (use GLOBAL filtered)
+    # ----------------------------
     c1, c2, c3 = st.columns(3)
     c1.metric("Total recognitions", len(filtered))
     c2.metric("People recognized", filtered["Name"].nunique())
     c3.metric("Categories", filtered["Contribution Category"].nunique())
 
-    # Top tables
-    label = "All months" if top_month == "All" else top_month.title()
+    # ----------------------------
+    # Top tables (use top_df)
+    # ----------------------------
     col1, col2 = st.columns(2)
 
     with col1:
-        st.write(f"**Top People ({label})**")
+        st.write(f"**Top People ({top_label})**")
         top_people = top_df["Name"].value_counts().head(10).reset_index()
         top_people.columns = ["Name", "Recognitions"]
         st.dataframe(top_people, use_container_width=True, hide_index=True)
 
     with col2:
-        st.write(f"**Top Categories ({label})**")
+        st.write(f"**Top Categories ({top_label})**")
         top_cat = top_df["Contribution Category"].value_counts().head(10).reset_index()
         top_cat.columns = ["Category", "Recognitions"]
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
 
-    # All Recognitions table (Year hidden only for display)
+    # ----------------------------
+    # All recognitions table (Year hidden only in display)
+    # ----------------------------
     st.subheader(f"🧾 All Recognitions — {selected_year}")
 
     display_df = filtered.drop(columns=["Year"], errors="ignore")
@@ -339,39 +358,13 @@ with tab2:
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-    # Download (keeps Year in CSV)
+    # Download keeps Year column
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
