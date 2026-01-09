@@ -236,7 +236,7 @@ with tab2:
     st.subheader(f"📊 Dashboard — {selected_year}")
 
     # ----------------------------
-    # Sidebar filters (global)
+    # Sidebar filters (GLOBAL)
     # ----------------------------
     st.sidebar.header("🔎 Filters")
 
@@ -264,15 +264,8 @@ with tab2:
 
     search = st.sidebar.text_input("Search (any column)", "")
 
-    # ✅ Month filter ONLY for Top People + Top Categories
-    top_month = st.sidebar.selectbox(
-        "📅 Month for Top Contributors (Top tables only)",
-        ["All"] + [m for m in MONTH_ORDER if m in dfy["Month"].unique()],
-        index=0,
-    )
-
     # ----------------------------
-    # Apply GLOBAL filters (affects metrics + all recognitions table)
+    # Apply GLOBAL filters (metrics + all recognitions table)
     # ----------------------------
     filtered = dfy.copy()
 
@@ -298,8 +291,24 @@ with tab2:
         filtered = filtered[mask]
 
     # ----------------------------
-    # Apply TOP-MONTH filter (ONLY for Top People + Top Categories)
+    # Summary metrics (GLOBAL)
     # ----------------------------
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total recognitions", len(filtered))
+    c2.metric("People recognized", filtered["Name"].nunique())
+    c3.metric("Categories", filtered["Contribution Category"].nunique())
+
+    st.divider()
+
+    # ----------------------------
+    # ✅ Month filter ONLY for Top tables (VISIBLE IN TAB, not sidebar)
+    # ----------------------------
+    top_month = st.selectbox(
+        "📅 Month for Top People & Top Categories",
+        ["All"] + [m for m in MONTH_ORDER if m in dfy["Month"].unique()],
+        index=0,
+    )
+
     top_df = filtered.copy()
     if top_month != "All":
         top_df = top_df[top_df["Month"] == top_month]
@@ -307,15 +316,7 @@ with tab2:
     top_label = "All months" if top_month == "All" else top_month.title()
 
     # ----------------------------
-    # Summary metrics (use GLOBAL filtered)
-    # ----------------------------
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Total recognitions", len(filtered))
-    c2.metric("People recognized", filtered["Name"].nunique())
-    c3.metric("Categories", filtered["Contribution Category"].nunique())
-
-    # ----------------------------
-    # Top tables (use top_df)
+    # Top tables (TOP-MONTH filtered)
     # ----------------------------
     col1, col2 = st.columns(2)
 
@@ -358,14 +359,10 @@ with tab2:
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-    # Download keeps Year column
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
-
-
-
 
