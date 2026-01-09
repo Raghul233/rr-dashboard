@@ -285,6 +285,9 @@ with tab2:
     st.divider()
     st.subheader(f"🧾 All Recognitions — {selected_year}")
 
+    # Drop Year column only for display
+    display_df = filtered.drop(columns=["Year"], errors="ignore")
+
     slack_col = find_slack_col(filtered.columns)
 
     if slack_col:
@@ -310,6 +313,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
