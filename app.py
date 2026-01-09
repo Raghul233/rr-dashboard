@@ -238,15 +238,24 @@ with tab2:
 
     # Filters
     st.sidebar.header("🔎 Filters")
-    quarter = st.sidebar.selectbox("Quarter", ["All"] + [q for q in ["Q1", "Q2", "Q3", "Q4"] if q in dfy["Quarter"].unique()])
+    quarter = st.sidebar.selectbox(
+        "Quarter",
+        ["All"] + [q for q in ["Q1", "Q2", "Q3", "Q4"] if q in dfy["Quarter"].unique()],
+    )
     month = st.sidebar.selectbox(
         "Month",
         ["All"]
         + [m for m in MONTH_ORDER if m in dfy["Month"].unique()]
-        + sorted([m for m in dfy["Month"].unique() if m not in MONTH_ORDER])
+        + sorted([m for m in dfy["Month"].unique() if m not in MONTH_ORDER]),
     )
-    category = st.sidebar.selectbox("Category", ["All"] + sorted(dfy["Contribution Category"].dropna().unique().tolist()))
-    name = st.sidebar.selectbox("Name", ["All"] + sorted(dfy["Name"].dropna().unique().tolist()))
+    category = st.sidebar.selectbox(
+        "Category",
+        ["All"] + sorted(dfy["Contribution Category"].dropna().unique().tolist()),
+    )
+    name = st.sidebar.selectbox(
+        "Name",
+        ["All"] + sorted(dfy["Name"].dropna().unique().tolist()),
+    )
     search = st.sidebar.text_input("Search (any column)", "")
 
     filtered = dfy.copy()
@@ -260,7 +269,11 @@ with tab2:
         filtered = filtered[filtered["Name"] == name]
     if search.strip():
         s = search.strip().lower()
-        mask = filtered.astype(str).apply(lambda row: row.str.lower().str.contains(s, na=False)).any(axis=1)
+        mask = (
+            filtered.astype(str)
+            .apply(lambda row: row.str.lower().str.contains(s, na=False))
+            .any(axis=1)
+        )
         filtered = filtered[mask]
 
     # Summary
@@ -283,37 +296,39 @@ with tab2:
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
-st.subheader(f"🧾 All Recognitions — {selected_year}")
 
-# ✅ Hide Year column only in the displayed table
-display_df = filtered.drop(columns=["Year"], errors="ignore")
+    # ✅ All Recognitions table (Year hidden)
+    st.subheader(f"🧾 All Recognitions — {selected_year}")
 
-slack_col = find_slack_col(display_df.columns)
+    display_df = filtered.drop(columns=["Year"], errors="ignore")
+    slack_col = find_slack_col(display_df.columns)
 
-if slack_col:
-    st.data_editor(
-        display_df,
-        use_container_width=True,
-        hide_index=True,
-        disabled=True,
-        column_config={
-            slack_col: st.column_config.LinkColumn(
-                slack_col,
-                help="Open the Slack message",
-                display_text="Open",
-            )
-        },
-    )
-else:
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    if slack_col:
+        st.data_editor(
+            display_df,
+            use_container_width=True,
+            hide_index=True,
+            disabled=True,
+            column_config={
+                slack_col: st.column_config.LinkColumn(
+                    slack_col,
+                    help="Open the Slack message",
+                    display_text="Open",
+                )
+            },
+        )
+    else:
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-
+    # Download (still includes Year, which is useful)
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
+
 
 
 
