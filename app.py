@@ -283,29 +283,30 @@ with tab2:
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
-    st.subheader(f"🧾 All Recognitions — {selected_year}")
+st.subheader(f"🧾 All Recognitions — {selected_year}")
 
-    # Drop Year column only for display
-    display_df = filtered.drop(columns=["Year"], errors="ignore")
+# ✅ Hide Year column only in the displayed table
+display_df = filtered.drop(columns=["Year"], errors="ignore")
 
-    slack_col = find_slack_col(filtered.columns)
+slack_col = find_slack_col(display_df.columns)
 
-    if slack_col:
-        st.data_editor(
-            filtered,
-            use_container_width=True,
-            hide_index=True,
-            disabled=True,
-            column_config={
-                slack_col: st.column_config.LinkColumn(
-                    slack_col,
-                    help="Open the Slack message",
-                    display_text="Open",
-                )
-            },
-        )
-    else:
-        st.dataframe(filtered, use_container_width=True, hide_index=True)
+if slack_col:
+    st.data_editor(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        disabled=True,
+        column_config={
+            slack_col: st.column_config.LinkColumn(
+                slack_col,
+                help="Open the Slack message",
+                display_text="Open",
+            )
+        },
+    )
+else:
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+
 
     st.download_button(
         "⬇️ Download filtered CSV",
@@ -313,6 +314,7 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
 
