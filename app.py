@@ -231,7 +231,6 @@ with tab1:
         mime="text/csv",
     )
 
-
 # ---------- Tab 2: Dashboard ----------
 with tab2:
     st.subheader(f"📊 Dashboard — {selected_year}")
@@ -242,22 +241,34 @@ with tab2:
         "Quarter",
         ["All"] + [q for q in ["Q1", "Q2", "Q3", "Q4"] if q in dfy["Quarter"].unique()],
     )
+
     month = st.sidebar.selectbox(
         "Month",
         ["All"]
         + [m for m in MONTH_ORDER if m in dfy["Month"].unique()]
         + sorted([m for m in dfy["Month"].unique() if m not in MONTH_ORDER]),
     )
+
     category = st.sidebar.selectbox(
         "Category",
         ["All"] + sorted(dfy["Contribution Category"].dropna().unique().tolist()),
     )
+
     name = st.sidebar.selectbox(
         "Name",
         ["All"] + sorted(dfy["Name"].dropna().unique().tolist()),
     )
+
     search = st.sidebar.text_input("Search (any column)", "")
 
+    # ✅ New: Month filter ONLY for Top People + Top Categories
+    top_month = st.sidebar.selectbox(
+        "Top tables month (only for Top People/Categories)",
+        ["All"] + [m for m in MONTH_ORDER if m in dfy["Month"].unique()],
+        index=0,
+    )
+
+    # Apply filters (global for metrics + all recognitions table)
     filtered = dfy.copy()
     if quarter != "All":
         filtered = filtered[filtered["Quarter"] == quarter]
@@ -276,28 +287,36 @@ with tab2:
         )
         filtered = filtered[mask]
 
-    # Summary
+    # Apply top-month filter ONLY for the top tables
+    top_df = filtered.copy()
+    if top_month != "All":
+        top_df = top_df[top_df["Month"] == top_month]
+
+    # Summary metrics (use global filtered)
     c1, c2, c3 = st.columns(3)
     c1.metric("Total recognitions", len(filtered))
     c2.metric("People recognized", filtered["Name"].nunique())
     c3.metric("Categories", filtered["Contribution Category"].nunique())
 
+    # Top tables
+    label = "All months" if top_month == "All" else top_month.title()
     col1, col2 = st.columns(2)
+
     with col1:
-        st.write("**Top People**")
-        top_people = filtered["Name"].value_counts().head(10).reset_index()
+        st.write(f"**Top People ({label})**")
+        top_people = top_df["Name"].value_counts().head(10).reset_index()
         top_people.columns = ["Name", "Recognitions"]
         st.dataframe(top_people, use_container_width=True, hide_index=True)
 
     with col2:
-        st.write("**Top Categories**")
-        top_cat = filtered["Contribution Category"].value_counts().head(10).reset_index()
+        st.write(f"**Top Categories ({label})**")
+        top_cat = top_df["Contribution Category"].value_counts().head(10).reset_index()
         top_cat.columns = ["Category", "Recognitions"]
         st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
     st.divider()
 
-    # ✅ All Recognitions table (Year hidden)
+    # All Recognitions table (Year hidden only for display)
     st.subheader(f"🧾 All Recognitions — {selected_year}")
 
     display_df = filtered.drop(columns=["Year"], errors="ignore")
@@ -320,13 +339,15 @@ with tab2:
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-    # Download (still includes Year, which is useful)
+    # Download (keeps Year in CSV)
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
+
 
 
 
