@@ -321,31 +321,41 @@ with tab2:
     col1, col2 = st.columns(2)
 
 with col1:
-    st.write(f"**Top People ({top_label}) — Category split + Total**")
+    st.write(f"**Top People ({top_label}) — Category split**")
 
-    # Pivot: rows = Name, cols = Contribution Category, values = count
-    people_split = (
+    # Base pivot: Name x Contribution Category
+    pivot = (
         top_df.pivot_table(
             index="Name",
             columns="Contribution Category",
-            values="Month",          # any non-null column works; we count rows
+            values="Month",   # any non-null column
             aggfunc="count",
-            fill_value=0
+            fill_value=0,
         )
         .astype(int)
     )
 
-    # Total recognitions per person
-    people_split["Total Recognitions"] = people_split.sum(axis=1)
+    # Ensure required columns exist
+    for col in ["Sev-2", "Sev-3", "BAU"]:
+        if col not in pivot.columns:
+            pivot[col] = 0
 
-    # Sort by total (desc)
-    people_split = people_split.sort_values("Total Recognitions", ascending=False)
+    # Others = everything except Sev-2, Sev-3, BAU
+    other_cols = [c for c in pivot.columns if c not in ["Sev-2", "Sev-3", "BAU"]]
+    pivot["Others"] = pivot[other_cols].sum(axis=1)
 
-    # Show top N
-    top_n = 10
-    people_split = people_split.head(top_n).reset_index()
+    # Total recognitions
+    pivot["Total Recognitions"] = pivot[["Sev-2", "Sev-3", "BAU", "Others"]].sum(axis=1)
 
-    st.dataframe(people_split, use_container_width=True, hide_index=True)
+    # Keep only required columns in exact order
+    final_people = pivot[
+        ["Sev-2", "Sev-3", "BAU", "Others", "Total Recognitions"]
+    ]
+
+    # Sort by total
+    final_people = final_people.sort_values("Total Recognitions", ascending=False)
+
+    # Top N
 
     with col2:
         st.write(f"**Top Categories ({top_label})**")
@@ -386,5 +396,6 @@ with col1:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
 
