@@ -235,9 +235,7 @@ with tab1:
 with tab2:
     st.subheader(f"📊 Dashboard — {selected_year}")
 
-    # ----------------------------
-    # Sidebar filters (GLOBAL)
-    # ----------------------------
+    # ---------------- Sidebar Filters (affects everything below except the Top-month selector) ----------------
     st.sidebar.header("🔎 Filters")
 
     quarter = st.sidebar.selectbox(
@@ -264,9 +262,7 @@ with tab2:
 
     search = st.sidebar.text_input("Search (any column)", "")
 
-    # ----------------------------
-    # Apply GLOBAL filters (metrics + all recognitions table)
-    # ----------------------------
+    # Apply sidebar filters (this drives metrics + tables + downloads)
     filtered = dfy.copy()
 
     if quarter != "All":
@@ -285,92 +281,89 @@ with tab2:
         s = search.strip().lower()
         mask = (
             filtered.astype(str)
-            .apply(lambda row: row.str.lower().str.contains(s, na=False))
+            .apply(lambda r: r.str.lower().str.contains(s, na=False))
             .any(axis=1)
         )
         filtered = filtered[mask]
 
-    # ----------------------------
-    # Summary metrics (GLOBAL)
-    # ----------------------------
+    # ---------------- Summary Metrics ----------------
     c1, c2, c3 = st.columns(3)
     c1.metric("Total recognitions", len(filtered))
     c2.metric("People recognized", filtered["Name"].nunique())
     c3.metric("Categories", filtered["Contribution Category"].nunique())
 
+    # ---------------- Month filter ONLY for Top People + Top Categories ----------------
     st.divider()
+    st.markdown("### 📅 Month for Top People & Top Categories")
 
-    # ----------------------------
-    # ✅ Month filter ONLY for Top tables (VISIBLE IN TAB, not sidebar)
-    # ----------------------------
     top_month = st.selectbox(
-        "📅 Month for Top People & Top Categories",
+        "Select Month (Top tables only)",
         ["All"] + [m for m in MONTH_ORDER if m in dfy["Month"].unique()],
-        index=0,
     )
+    top_label = "All months" if top_month == "All" else top_month.title()
 
+    # Top tables should respect the sidebar filters, PLUS optionally a month filter
     top_df = filtered.copy()
     if top_month != "All":
         top_df = top_df[top_df["Month"] == top_month]
 
-    top_label = "All months" if top_month == "All" else top_month.title()
-
-    # ----------------------------
-    # Top tables (TOP-MONTH filtered)
-    # ----------------------------
     col1, col2 = st.columns(2)
 
-with col1:
-    st.write(f"**Top People ({top_label}) — Category split**")
+    # ---------------- Top People (Category split) ----------------
+    with col1:
+        st.write(f"**Top People ({top_label}) — Category split**")
 
-    # Base pivot: Name x Contribution Category
-    pivot = (
-        top_df.pivot_table(
-            index="Name",
-            columns="Contribution Category",
-            values="Month",   # any non-null column
-            aggfunc="count",
-            fill_value=0,
-        )
-        .astype(int)
-    )
+        if top_df.empty:
+            st.info("No data available for the selected filters/month.")
+        else:
+            # Name x Category counts
+            pivot = top_df.pivot_table(
+                index="Name",
+                columns="Contribution Category",
+                values="Month",  # any non-null column is fine
+                aggfunc="count",
+                fill_value=0,
+            ).astype(int)
 
-    # Ensure required columns exist
-    for col in ["Sev-2", "Sev-3", "BAU"]:
-        if col not in pivot.columns:
-            pivot[col] = 0
+            # Ensure these exist
+            for col in ["Sev-2", "Sev-3", "BAU"]:
+                if col not in pivot.columns:
+                    pivot[col] = 0
 
-    # Others = everything except Sev-2, Sev-3, BAU
-    other_cols = [c for c in pivot.columns if c not in ["Sev-2", "Sev-3", "BAU"]]
-    pivot["Others"] = pivot[other_cols].sum(axis=1)
+            # Others = everything except Sev-2/Sev-3/BAU
+            other_cols = [c for c in pivot.columns if c not in ["Sev-2", "Sev-3", "BAU"]]
+            pivot["Others"] = pivot[other_cols].sum(axis=1) if other_cols else 0
 
-    # Total recognitions
-    pivot["Total Recognitions"] = pivot[["Sev-2", "Sev-3", "BAU", "Others"]].sum(axis=1)
+            # Total
+            pivot["Total Recognitions"] = pivot[["Sev-2", "Sev-3", "BAU", "Others"]].sum(axis=1)
 
-    # Keep only required columns in exact order
-    final_people = pivot[
-        ["Sev-2", "Sev-3", "BAU", "Others", "Total Recognitions"]
-    ]
+            final_people = (
+                pivot[["Sev-2", "Sev-3", "BAU", "Others", "Total Recognitions"]]
+                .sort_values("Total Recognitions", ascending=False)
+                .head(10)
+                .reset_index()
+            )
 
-    # Sort by total
-    final_people = final_people.sort_values("Total Recognitions", ascending=False)
+            st.dataframe(final_people, use_container_width=True, hide_index=True)
 
-    # Top N
-
+    # ---------------- Top Categories ----------------
     with col2:
         st.write(f"**Top Categories ({top_label})**")
-        top_cat = top_df["Contribution Category"].value_counts().head(10).reset_index()
-        top_cat.columns = ["Category", "Recognitions"]
-        st.dataframe(top_cat, use_container_width=True, hide_index=True)
 
+        if top_df.empty:
+            st.info("No data available for the selected filters/month.")
+        else:
+            top_cat = top_df["Contribution Category"].value_counts().head(10).reset_index()
+            top_cat.columns = ["Category", "Recognitions"]
+            st.dataframe(top_cat, use_container_width=True, hide_index=True)
+
+    # ---------------- All Recognitions Table ----------------
     st.divider()
+    st.subheader(f"🧾 All Recognitions")
 
-    # ----------------------------
-    # All recognitions table (Year hidden only in display)
-    # ----------------------------
-    st.subheader(f"🧾 All Recognitions — {selected_year}")
-
+    # Hide Year column only in display (keep it in filtered for downloads)
     display_df = filtered.drop(columns=["Year"], errors="ignore")
+
     slack_col = find_slack_col(display_df.columns)
 
     if slack_col:
@@ -390,12 +383,10 @@ with col1:
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
+    # ---------------- Download (keeps Year in CSV) ----------------
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
-
-
-
