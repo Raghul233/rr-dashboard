@@ -320,11 +320,32 @@ with tab2:
     # ----------------------------
     col1, col2 = st.columns(2)
 
-    with col1:
-        st.write(f"**Top People ({top_label})**")
-        top_people = top_df["Name"].value_counts().head(10).reset_index()
-        top_people.columns = ["Name", "Recognitions"]
-        st.dataframe(top_people, use_container_width=True, hide_index=True)
+with col1:
+    st.write(f"**Top People ({top_label}) — Category split + Total**")
+
+    # Pivot: rows = Name, cols = Contribution Category, values = count
+    people_split = (
+        top_df.pivot_table(
+            index="Name",
+            columns="Contribution Category",
+            values="Month",          # any non-null column works; we count rows
+            aggfunc="count",
+            fill_value=0
+        )
+        .astype(int)
+    )
+
+    # Total recognitions per person
+    people_split["Total Recognitions"] = people_split.sum(axis=1)
+
+    # Sort by total (desc)
+    people_split = people_split.sort_values("Total Recognitions", ascending=False)
+
+    # Show top N
+    top_n = 10
+    people_split = people_split.head(top_n).reset_index()
+
+    st.dataframe(people_split, use_container_width=True, hide_index=True)
 
     with col2:
         st.write(f"**Top Categories ({top_label})**")
@@ -365,4 +386,5 @@ with tab2:
         file_name=f"recognitions_filtered_{selected_year}.csv",
         mime="text/csv",
     )
+
 
