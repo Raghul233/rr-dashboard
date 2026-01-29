@@ -527,14 +527,20 @@ with tab3:
 
     st.dataframe(team_display, use_container_width=True, hide_index=True)
 
-    # ---------- TEAM BAR CHART ----------
-    st.markdown("### 📊 Team Performance (Bar Chart)")
+    # ---------- TEAM BAR CHARTS (separate) ----------
+    st.markdown("### 📊 Team Performance (Bar Charts)")
 
-    chart_df = team_display.set_index("Month")[
-        ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
-    ]
+    # Keep month order consistent
+    chart_df = team_display.copy()
+    chart_df["Month"] = pd.Categorical(chart_df["Month"], categories=MONTH_ORDER, ordered=True)
+    chart_df = chart_df.sort_values("Month").set_index("Month")
 
-    st.bar_chart(chart_df)
+    st.markdown("**Sev-2 Contribution %**")
+    st.bar_chart(chart_df[["Sev2_Contribution_%"]])
+
+    st.markdown("**Sev-3 Resolution / RCA %**")
+    st.bar_chart(chart_df[["Sev3_Resolution_RCA_%"]])
+
 
     # ---------- PEOPLE PERFORMANCE ----------
     st.markdown("### 👤 People Performance")
@@ -558,6 +564,9 @@ with tab3:
     for col in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
         people_out[col] = pd.to_numeric(people_out[col], errors="coerce").round(1)
 
+    # Month ordering like Team (FEB -> JAN)
+    people_out["Month"] = pd.Categorical(people_out["Month"], categories=MONTH_ORDER, ordered=True)
+
     people_display = people_out[
         ["Quarter", "Month", "Name", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
     ].sort_values(["Month", "Name"])
@@ -578,3 +587,4 @@ with tab3:
         file_name=f"people_performance_{selected_year}.csv",
         mime="text/csv",
     )
+
