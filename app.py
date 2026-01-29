@@ -525,22 +525,33 @@ with tab3:
 
     st.dataframe(team_display, use_container_width=True, hide_index=True)
 
-    # ---------------- TEAM BAR CHARTS (SIDE BY SIDE) ----------------
+    # ---------------- TEAM BAR CHARTS (SIDE BY SIDE with separator) ----------------
     st.markdown("### 📊 Team Performance — Visual")
-
-    chart_df = team_display.set_index("Month")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
+    
+    chart_df = team_display.copy()
+    chart_df["Month"] = pd.Categorical(
+        chart_df["Month"], categories=MONTH_ORDER, ordered=True
+    )
+    chart_df = chart_df.sort_values("Month").set_index("Month")
+    
+    # 3 columns: left chart | separator | right chart
+    left, sep, right = st.columns([5, 0.2, 5])
+    
+    with left:
         st.markdown("**Sev-2 Contribution %**")
         st.bar_chart(chart_df[["Sev2_Contribution_%"]])
-
-    with col2:
+    
+    with sep:
+        # Vertical separator
+        st.markdown(
+            "<div style='height: 350px; border-left: 2px solid #ddd;'></div>",
+            unsafe_allow_html=True,
+        )
+    
+    with right:
         st.markdown("**Sev-3 Resolution / RCA %**")
         st.bar_chart(chart_df[["Sev3_Resolution_RCA_%"]])
 
-    st.divider()
 
     # ---------------- PEOPLE PERFORMANCE (MONTHLY) ----------------
     st.markdown("### 👤 People Performance (Monthly)")
@@ -616,3 +627,4 @@ with tab3:
             file_name=f"people_performance_{selected_year}.csv",
             mime="text/csv",
         )
+
