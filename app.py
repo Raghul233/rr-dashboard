@@ -475,116 +475,144 @@ with tab3:
     st.caption(
         "Sev-2 shown as **Contribution %** · "
         "Sev-3 shown as **Resolution / RCA %** · "
-        "Percentages computed from Team received volumes."
+        "Percentages are calculated using Team received volumes."
     )
 
-    # ---------- Load performance CSVs ----------
-    team_perf_raw = pd.read_csv("performance_team.csv")
-    people_perf_raw = pd.read_csv("performance_people.csv")
+    # ---------------- Load performance CSVs ----------------
+    team_raw = pd.read_csv("performance_team.csv")
+    people_raw = pd.read_csv("performance_people.csv")
 
-    # Filter by selected year
-    team_perf = team_perf_raw[team_perf_raw["Year"] == selected_year].copy()
-    people_perf = people_perf_raw[people_perf_raw["Year"] == selected_year].copy()
+    # Normalize
+    team_raw["Month"] = team_raw["Month"].astype(str).str.upper()
+    people_raw["Month"] = people_raw["Month"].astype(str).str.upper()
 
-    # ---------- Month filter (Performance tables only) ----------
-    st.markdown("### 📅 Select Month (Performance tables only)")
+    team = team_raw[team_raw["Year"] == selected_year].copy()
+    people = people_raw[people_raw["Year"] == selected_year].copy()
 
-    perf_months = ["All"] + [
-        m for m in MONTH_ORDER if m in team_perf["Month"].unique()
-    ]
+    # ---------------- Month filter (Performance only) ----------------
+    st.markdown("### 📅 Select Month (Performance only)")
 
-    selected_perf_month = st.selectbox(
-        "Month",
-        perf_months,
-        index=0,
-        key="performance_month_filter"
-    )
+    month_opts = ["All"] + [m for m in MONTH_ORDER if m in team["Month"].unique()]
+    selected_month = st.selectbox("Month", month_opts, index=0, key="perf_month")
 
-    if selected_perf_month != "All":
-        team_perf = team_perf[team_perf["Month"] == selected_perf_month]
-        people_perf = people_perf[people_perf["Month"] == selected_perf_month]
+    if selected_month != "All":
+        team = team[team["Month"] == selected_month]
+        people = people[people["Month"] == selected_month]
 
-    # ---------- TEAM PERFORMANCE ----------
+    # ---------------- TEAM PERFORMANCE ----------------
     st.markdown("### 🧠 Team Performance")
 
-    team_out = team_perf.copy()
+    team_perf = team.copy()
 
-    # Percent calculations (safe numeric)
-    team_out["Sev2_Contribution_%"] = (
-        team_out["Sev2_Contributed"] / team_out["Sev2_Received"] * 100
+    team_perf["Sev2_Contribution_%"] = (
+        team_perf["Sev2_Contributed"] / team_perf["Sev2_Received"].replace(0, pd.NA) * 100
     )
-    team_out["Sev3_Resolution_RCA_%"] = (
-        team_out["Sev3_Resolved_RCA"] / team_out["Sev3_Received"] * 100
+    team_perf["Sev3_Resolution_RCA_%"] = (
+        team_perf["Sev3_Resolved_RCA"] / team_perf["Sev3_Received"].replace(0, pd.NA) * 100
     )
 
-    # Force numeric + round (prevents TypeError)
-    for col in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
-        team_out[col] = pd.to_numeric(team_out[col], errors="coerce").round(1)
+    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
+        team_perf[c] = pd.to_numeric(team_perf[c], errors="coerce").round(1)
 
-    team_display = team_out[
+    team_display = team_perf[
         ["Quarter", "Month", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
-    ]
+    ].copy()
+
+    team_display["Month"] = pd.Categorical(
+        team_display["Month"], categories=MONTH_ORDER, ordered=True
+    )
+    team_display = team_display.sort_values("Month")
 
     st.dataframe(team_display, use_container_width=True, hide_index=True)
 
-    # ---------- TEAM BAR CHARTS (separate) ----------
-    st.markdown("### 📊 Team Performance (Bar Charts)")
+    # ---------------- TEAM BAR CHARTS (SIDE BY SIDE) ----------------
+    st.markdown("### 📊 Team Performance — Visual")
 
-    # Keep month order consistent
-    chart_df = team_display.copy()
-    chart_df["Month"] = pd.Categorical(chart_df["Month"], categories=MONTH_ORDER, ordered=True)
-    chart_df = chart_df.sort_values("Month").set_index("Month")
+    chart_df = team_display.set_index("Month")
 
-    st.markdown("**Sev-2 Contribution %**")
-    st.bar_chart(chart_df[["Sev2_Contribution_%"]])
+    col1, col2 = st.columns(2)
 
-    st.markdown("**Sev-3 Resolution / RCA %**")
-    st.bar_chart(chart_df[["Sev3_Resolution_RCA_%"]])
+    with col1:
+        st.markdown("**Sev-2 Contribution %**")
+        st.bar_chart(chart_df[["Sev2_Contribution_%"]])
 
+    with col2:
+        st.markdown("**Sev-3 Resolution / RCA %**")
+        st.bar_chart(chart_df[["Sev3_Resolution_RCA_%"]])
 
-    # ---------- PEOPLE PERFORMANCE ----------
-    st.markdown("### 👤 People Performance")
+    st.divider()
 
-    # Merge team received volumes (needed for %)
-    recv_lookup = team_perf[["Month", "Sev2_Received", "Sev3_Received"]].drop_duplicates()
+    # ---------------- PEOPLE PERFORMANCE (MONTHLY) ----------------
+    st.markdown("### 👤 People Performance (Monthly)")
 
-    people_out = people_perf.merge(
-        recv_lookup,
-        on="Month",
-        how="left"
+    # Join team received volumes for % calculation
+    team_recv = team[["Month", "Sev2_Received", "Sev3_Received"]].drop_duplicates()
+
+    people_perf = people.merge(team_recv, on="Month", how="left")
+
+    people_perf["Sev2_Contribution_%"] = (
+        people_perf["Sev2_Contributed"] / people_perf["Sev2_Received"].replace(0, pd.NA) * 100
+    )
+    people_perf["Sev3_Resolution_RCA_%"] = (
+        people_perf["Sev3_Resolved_RCA"] / people_perf["Sev3_Received"].replace(0, pd.NA) * 100
     )
 
-    people_out["Sev2_Contribution_%"] = (
-        people_out["Sev2_Contributed"] / people_out["Sev2_Received"] * 100
+    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
+        people_perf[c] = pd.to_numeric(people_perf[c], errors="coerce").round(1)
+
+    people_perf["Month"] = pd.Categorical(
+        people_perf["Month"], categories=MONTH_ORDER, ordered=True
     )
-    people_out["Sev3_Resolution_RCA_%"] = (
-        people_out["Sev3_Resolved_RCA"] / people_out["Sev3_Received"] * 100
-    )
 
-    for col in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
-        people_out[col] = pd.to_numeric(people_out[col], errors="coerce").round(1)
-
-    # Month ordering like Team (FEB -> JAN)
-    people_out["Month"] = pd.Categorical(people_out["Month"], categories=MONTH_ORDER, ordered=True)
-
-    people_display = people_out[
+    people_display = people_perf[
         ["Quarter", "Month", "Name", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
     ].sort_values(["Month", "Name"])
 
     st.dataframe(people_display, use_container_width=True, hide_index=True)
 
-    # ---------- Downloads ----------
-    st.download_button(
-        "⬇️ Download Team Performance CSV",
-        data=team_display.to_csv(index=False).encode("utf-8"),
-        file_name=f"team_performance_{selected_year}.csv",
-        mime="text/csv",
+    st.divider()
+
+    # ---------------- PEOPLE PERFORMANCE (OVERALL) ----------------
+    st.markdown("### 🏅 People Performance (Overall)")
+
+    overall = (
+        people_perf.groupby("Name", as_index=False)[
+            ["Sev2_Contributed", "Sev3_Resolved_RCA", "Sev2_Received", "Sev3_Received"]
+        ]
+        .sum()
     )
 
-    st.download_button(
-        "⬇️ Download People Performance CSV",
-        data=people_display.to_csv(index=False).encode("utf-8"),
-        file_name=f"people_performance_{selected_year}.csv",
-        mime="text/csv",
+    overall["Sev2_Contribution_%"] = (
+        overall["Sev2_Contributed"] / overall["Sev2_Received"].replace(0, pd.NA) * 100
+    )
+    overall["Sev3_Resolution_RCA_%"] = (
+        overall["Sev3_Resolved_RCA"] / overall["Sev3_Received"].replace(0, pd.NA) * 100
     )
 
+    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
+        overall[c] = pd.to_numeric(overall[c], errors="coerce").fillna(0).round(1)
+
+    overall_display = overall[
+        ["Name", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
+    ].sort_values("Sev3_Resolution_RCA_%", ascending=False)
+
+    st.dataframe(overall_display, use_container_width=True, hide_index=True)
+
+    # ---------------- Downloads ----------------
+    cdl1, cdl2 = st.columns(2)
+
+    with cdl1:
+        st.download_button(
+            "⬇️ Download Team Performance",
+            data=team_display.to_csv(index=False).encode("utf-8"),
+            file_name=f"team_performance_{selected_year}.csv",
+            mime="text/csv",
+        )
+
+    with cdl2:
+        st.download_button(
+            "⬇️ Download People Performance",
+            data=people_display.to_csv(index=False).encode("utf-8"),
+            file_name=f"people_performance_{selected_year}.csv",
+            mime="text/csv",
+        )
