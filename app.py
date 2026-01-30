@@ -601,19 +601,49 @@ with tab3:
         overall[c] = pd.to_numeric(overall[c], errors="coerce").fillna(0).round(1)
 
     overall_display = overall[
-        ["Name", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
-    ].sort_values("Sev3_Resolution_RCA_%", ascending=False)
-
+        [
+            "Name",
+            "Sev2_Contributed",
+            "Sev2_Contribution_%",
+            "Sev3_Resolved_RCA",
+            "Sev3_Resolution_RCA_%",
+        ]
+    ].rename(
+        columns={
+            "Sev2_Contributed": "Sev2 Contributed",
+            "Sev2_Contribution_%": "Sev2 Contribution %",
+            "Sev3_Resolved_RCA": "Sev3 Contributed",
+            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
+        }
+    ).sort_values("Sev3 Resolution / RCA %", ascending=False)
+    
     st.dataframe(overall_display, use_container_width=True, hide_index=True)
+
 
     # ---------------- PEOPLE PERFORMANCE (MONTHLY NEXT) ----------------
     st.markdown("### 👤 People Performance (Monthly)")
 
     people_display = people_perf[
-        ["Quarter", "Month", "Name", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
-    ].sort_values(["Month", "Name"])
-
+        [
+            "Quarter",
+            "Month",
+            "Name",
+            "Sev2_Contributed",
+            "Sev2_Contribution_%",
+            "Sev3_Resolved_RCA",
+            "Sev3_Resolution_RCA_%",
+        ]
+    ].rename(
+        columns={
+            "Sev2_Contributed": "Sev2 Contributed",
+            "Sev2_Contribution_%": "Sev2 Contribution %",
+            "Sev3_Resolved_RCA": "Sev3 Contributed",
+            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
+        }
+    ).sort_values(["Month", "Name"])
+    
     st.dataframe(people_display, use_container_width=True, hide_index=True)
+
 
     # ---------------- Downloads ----------------
     cdl1, cdl2 = st.columns(2)
@@ -633,3 +663,4 @@ with tab3:
             file_name=f"people_performance_{selected_year}.csv",
             mime="text/csv",
         )
+
