@@ -469,222 +469,341 @@ def sort_months(df_: pd.DataFrame, month_col="Month") -> pd.DataFrame:
     return df_.assign(_m=df_[month_col].map(order_map).fillna(999)).sort_values("_m").drop(columns=["_m"])
 
 
+# ✅ IMPORTANT: make sure your tabs line includes tab3 (replace your existing tabs line)
+tab1, tab2, tab3 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Performance"])
+
+
 # ---------- Tab 3: Performance ----------
 with tab3:
+    import altair as alt
+
     st.subheader(f"📈 Performance — {selected_year}")
     st.caption(
-        "Sev-2 shown as **Contribution %** · "
-        "Sev-3 shown as **Resolution / RCA %** · "
-        "Percentages are calculated using Team received volumes."
+        "Sev-2 shown as **Contribution %**; Sev-3 shown as **Resolution / RCA %**. "
+        "Percentages are computed using Team received volumes."
     )
 
-    # ---------------- Load performance CSVs ----------------
-    team_raw = pd.read_csv("performance_team.csv")
-    people_raw = pd.read_csv("performance_people.csv")
+    TEAM_PERF_FILE = "performance_team.csv"
+    PEOPLE_PERF_FILE = "performance_people.csv"
 
-    # Normalize month casing
-    team_raw["Month"] = team_raw["Month"].astype(str).str.upper().str.strip()
-    people_raw["Month"] = people_raw["Month"].astype(str).str.upper().str.strip()
-    people_raw["Name"] = people_raw["Name"].astype(str).str.strip()
+    @st.cache_data
+    def _read_csv_perf(obj) -> pd.DataFrame:
+        d = pd.read_csv(obj)
+        d.columns = [c.strip() for c in d.columns]
+        return d
 
-    # Scope to selected year
-    team = team_raw[team_raw["Year"] == selected_year].copy()
-    people = people_raw[people_raw["Year"] == selected_year].copy()
+    def _load_perf_csv(expected_name: str, label: str) -> pd.DataFrame:
+        if os.path.exists(expected_name):
+            return _read_csv_perf(expected_name)
 
-    # ---------------- Month filter (Performance only) ----------------
-    st.markdown("### 📅 Select Month (Performance only)")
+        st.warning(f"'{expected_name}' not found in repo. Upload it below ({label}).")
+        up = st.file_uploader(f"Upload {label} CSV", type=["csv"], key=f"uploader_{expected_name}")
+        if up is not None:
+            return _read_csv_perf(up)
 
-    month_opts = ["All"] + [m for m in MONTH_ORDER if m in team["Month"].unique()]
-    selected_month = st.selectbox("Month", month_opts, index=0, key="perf_month")
+        st.info(f"Waiting for {label} CSV…")
+        st.stop()
 
-    if selected_month != "All":
-        team = team[team["Month"] == selected_month]
-        people = people[people["Month"] == selected_month]
+    def _to_num(s):
+        return pd.to_numeric(s, errors="coerce").fillna(0)
 
-    # ---------------- TEAM PERFORMANCE ----------------
-    st.markdown("### 🧠 Team Performance")
+    def _normalize_team_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+        dfp = df_in.copy()
+        dfp.columns = [c.strip() for c in dfp.columns]
 
-    team_perf = team.copy()
+        # map a few possible column variants -> canonical
+        colmap = {}
+        for c in dfp.columns:
+            cl = c.strip().lower()
+            if cl == "year":
+                colmap[c] = "Year"
+            elif cl == "quarter":
+                colmap[c] = "Quarter"
+            elif cl == "month":
+                colmap[c] = "Month"
+            elif cl in ["sev2_received", "sev 2 received", "sev2 received"]:
+                colmap[c] = "Sev2_Received"
+            elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
+                colmap[c] = "Sev2_Contributed"
+            elif cl in ["sev3_received", "sev 3 received", "sev3 received"]:
+                colmap[c] = "Sev3_Received"
+            elif cl in [
+                "sev3_contributed", "sev 3 contributed", "sev3 contributed",
+                "sev3_resolved", "sev 3 resolved",
+                "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca"
+            ]:
+                colmap[c] = "Sev3_Contributed"
 
-    # Safe numeric conversion
-    for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]:
-        team_perf[c] = pd.to_numeric(team_perf[c], errors="coerce").fillna(0)
+        dfp = dfp.rename(columns=colmap)
 
-    team_perf["Sev2_Contribution_%"] = (
-        team_perf["Sev2_Contributed"] / team_perf["Sev2_Received"].replace(0, pd.NA) * 100
+        required = ["Year", "Quarter", "Month", "Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Contributed"]
+        missing = [c for c in required if c not in dfp.columns]
+        if missing:
+            st.error(f"performance_team.csv is missing columns: {missing}")
+            st.stop()
+
+        dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+        dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+        dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+
+        for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Contributed"]:
+            dfp[c] = _to_num(dfp[c])
+
+        # % columns (safe divide)
+        dfp["Sev2_Contribution_%"] = (dfp["Sev2_Contributed"] / dfp["Sev2_Received"].replace(0, pd.NA) * 100).fillna(0)
+        dfp["Sev3_Resolution_RCA_%"] = (dfp["Sev3_Contributed"] / dfp["Sev3_Received"].replace(0, pd.NA) * 100).fillna(0)
+
+        # month ordering
+        dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+        dfp = dfp.sort_values(["Quarter", "Month"])
+        return dfp
+
+    def _normalize_people_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+        dfp = df_in.copy()
+        dfp.columns = [c.strip() for c in dfp.columns]
+
+        colmap = {}
+        for c in dfp.columns:
+            cl = c.strip().lower()
+            if cl == "year":
+                colmap[c] = "Year"
+            elif cl == "quarter":
+                colmap[c] = "Quarter"
+            elif cl == "month":
+                colmap[c] = "Month"
+            elif cl == "name":
+                colmap[c] = "Name"
+            elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
+                colmap[c] = "Sev2_Contributed"
+            elif cl in [
+                "sev3_contributed", "sev 3 contributed", "sev3 contributed",
+                "sev3_resolved", "sev 3 resolved",
+                "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca"
+            ]:
+                colmap[c] = "Sev3_Contributed"
+
+        dfp = dfp.rename(columns=colmap)
+
+        required = ["Year", "Quarter", "Month", "Name", "Sev2_Contributed", "Sev3_Contributed"]
+        missing = [c for c in required if c not in dfp.columns]
+        if missing:
+            st.error(f"performance_people.csv is missing columns: {missing}")
+            st.stop()
+
+        dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+        dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+        dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+        dfp["Name"] = dfp["Name"].astype(str).str.strip()
+
+        dfp["Sev2_Contributed"] = _to_num(dfp["Sev2_Contributed"])
+        dfp["Sev3_Contributed"] = _to_num(dfp["Sev3_Contributed"])
+
+        dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+        dfp = dfp.sort_values(["Quarter", "Month", "Name"])
+        return dfp
+
+    # --- Load performance files ---
+    team_raw = _load_perf_csv(TEAM_PERF_FILE, "Team performance")
+    people_raw = _load_perf_csv(PEOPLE_PERF_FILE, "People performance")
+
+    team_perf_all = _normalize_team_perf(team_raw)
+    people_perf_all = _normalize_people_perf(people_raw)
+
+    # --- Filter to selected year ---
+    team_perf = team_perf_all[team_perf_all["Year"] == selected_year].copy()
+    people_perf = people_perf_all[people_perf_all["Year"] == selected_year].copy()
+
+    if team_perf.empty:
+        st.warning(f"No team performance rows found for {selected_year}.")
+        st.stop()
+
+    # --- Month filter (same pattern as Tab 2 "Top tables only") ---
+    available_months = [m for m in MONTH_ORDER if m in team_perf["Month"].astype(str).unique().tolist()]
+    month_filter = st.selectbox(
+        "📅 Select Month (Performance tables + charts only)",
+        ["All"] + available_months,
+        index=0,
+        key="perf_month_filter",
     )
-    team_perf["Sev3_Resolution_RCA_%"] = (
-        team_perf["Sev3_Resolved_RCA"] / team_perf["Sev3_Received"].replace(0, pd.NA) * 100
-    )
 
-    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
-        team_perf[c] = pd.to_numeric(team_perf[c], errors="coerce").round(1)
+    team_view = team_perf.copy()
+    people_view = people_perf.copy()
 
-    # Team table with counts + %
-    team_display = team_perf[
-        [
-            "Quarter",
-            "Month",
-            "Sev2_Received",
-            "Sev2_Contributed",
-            "Sev2_Contribution_%",
-            "Sev3_Received",
-            "Sev3_Resolved_RCA",
-            "Sev3_Resolution_RCA_%",
-        ]
-    ].copy()
-    
-    team_display = team_display.rename(
-        columns={
-            "Sev2_Received": "Sev2 Received",
-            "Sev2_Contributed": "Sev2 Contributed",
-            "Sev2_Contribution_%": "Sev2 Contribution %",
-            "Sev3_Received": "Sev3 Received",
-            "Sev3_Resolved_RCA": "Sev3 Resolved/RCA",
-            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
-        }
-    )
-    
-    # Keep month order consistent (FEB -> JAN)
-    team_display["Month"] = pd.Categorical(
-        team_display["Month"], categories=MONTH_ORDER, ordered=True
-    )
-    team_display = team_display.sort_values("Month")
-    
-    st.dataframe(team_display, use_container_width=True, hide_index=True)
+    if month_filter != "All":
+        team_view = team_view[team_view["Month"].astype(str) == month_filter]
+        people_view = people_view[people_view["Month"].astype(str) == month_filter]
 
+    # =======================
+    # 1) TEAM CHARTS (side-by-side) + separator between graphs
+    # =======================
+    st.subheader("📊 Team Performance — Visual")
 
-    # ---------------- TEAM BAR CHARTS (SIDE BY SIDE + SEPARATOR) ----------------
-    st.markdown("### 📊 Team Performance — Visual")
+    # For charts, always use the filtered team_view
+    chart_base = team_view.copy()
+    chart_base["Month"] = chart_base["Month"].astype(str)
 
-    chart_df = team_display.copy()
-    chart_df = chart_df.sort_values("Month").set_index("Month")
+    # Force numeric (prevents dtype issues)
+    chart_base["Sev2_Contribution_%"] = pd.to_numeric(chart_base["Sev2_Contribution_%"], errors="coerce").fillna(0)
+    chart_base["Sev3_Resolution_RCA_%"] = pd.to_numeric(chart_base["Sev3_Resolution_RCA_%"], errors="coerce").fillna(0)
 
-    left, sep, right = st.columns([5, 0.2, 5])
+    # Layout with a vertical separator column
+    left, sep, right = st.columns([1, 0.03, 1])
 
     with left:
         st.markdown("**Sev-2 Contribution %**")
-        st.bar_chart(chart_df[["Sev2_Contribution_%"]])
+        sev2_chart = (
+            alt.Chart(chart_base)
+            .mark_bar()
+            .encode(
+                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                y=alt.Y("Sev2_Contribution_%:Q", title="%", scale=alt.Scale(domain=[0, 100])),
+                tooltip=["Month", alt.Tooltip("Sev2_Contribution_%:Q", title="Sev-2 %", format=".1f")],
+            )
+            .properties(height=320)
+        )
+        st.altair_chart(sev2_chart, use_container_width=True)
 
     with sep:
         st.markdown(
-            "<div style='height: 350px; border-left: 2px solid #ddd;'></div>",
+            "<div style='height:360px; border-left: 2px solid rgba(255,255,255,0.15); margin: 0 auto;'></div>",
             unsafe_allow_html=True,
         )
 
     with right:
         st.markdown("**Sev-3 Resolution / RCA %**")
-        st.bar_chart(chart_df[["Sev3_Resolution_RCA_%"]])
+        sev3_chart = (
+            alt.Chart(chart_base)
+            .mark_bar()
+            .encode(
+                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                y=alt.Y("Sev3_Resolution_RCA_%:Q", title="%", scale=alt.Scale(domain=[0, 100])),
+                tooltip=["Month", alt.Tooltip("Sev3_Resolution_RCA_%:Q", title="Sev-3 %", format=".1f")],
+            )
+            .properties(height=320)
+        )
+        st.altair_chart(sev3_chart, use_container_width=True)
 
     st.divider()
 
-    # ---------------- PEOPLE PERFORMANCE (JOIN TEAM RECEIVED) ----------------
-    # Join team received volumes by Month for percentage denominators
-    team_recv = team[["Month", "Sev2_Received", "Sev3_Received"]].drop_duplicates()
+    # =======================
+    # 2) TEAM TABLE (with received + contributed counts + %)
+    # =======================
+    st.subheader("🧾 Team Performance — Table")
 
-    people_perf = people.merge(team_recv, on="Month", how="left").copy()
+    team_out = team_view.copy()
+    team_out["Month"] = team_out["Month"].astype(str)
 
-    # Safe numeric conversion
-    for c in ["Sev2_Contributed", "Sev3_Resolved_RCA", "Sev2_Received", "Sev3_Received"]:
-        if c in people_perf.columns:
-            people_perf[c] = pd.to_numeric(people_perf[c], errors="coerce").fillna(0)
+    team_out = team_out[
+        ["Quarter", "Month",
+         "Sev2_Received", "Sev2_Contributed", "Sev2_Contribution_%",
+         "Sev3_Received", "Sev3_Contributed", "Sev3_Resolution_RCA_%"]
+    ].copy()
 
-    people_perf["Sev2_Contribution_%"] = (
-        people_perf["Sev2_Contributed"] / people_perf["Sev2_Received"].replace(0, pd.NA) * 100
+    team_out = team_out.rename(
+        columns={
+            "Sev2_Received": "Sev-2 Received",
+            "Sev2_Contributed": "Sev-2 Contributed",
+            "Sev2_Contribution_%": "Sev-2 Contribution %",
+            "Sev3_Received": "Sev-3 Received",
+            "Sev3_Contributed": "Sev-3 Contributed",
+            "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
+        }
     )
-    people_perf["Sev3_Resolution_RCA_%"] = (
-        people_perf["Sev3_Resolved_RCA"] / people_perf["Sev3_Received"].replace(0, pd.NA) * 100
-    )
 
-    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
-        people_perf[c] = pd.to_numeric(people_perf[c], errors="coerce").round(1)
+    # Round %
+    team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
+    team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
 
-    people_perf["Month"] = pd.Categorical(
-        people_perf["Month"], categories=MONTH_ORDER, ordered=True
-    )
+    st.dataframe(team_out, use_container_width=True, hide_index=True)
 
-    # ---------------- PEOPLE PERFORMANCE (OVERALL FIRST) ----------------
-    st.markdown("### 🏅 People Performance (Overall)")
+    st.divider()
 
+    # =======================
+    # 3) PEOPLE TABLES
+    #    - Overall first
+    #    - Monthly next (both include counts + %)
+    # =======================
+    st.subheader("👥 People Performance — Overall (Year-to-date)")
+
+    # Use *year* received totals from team_perf (not month-filtered) for overall denominators
+    team_year_totals = team_perf.copy()
+    sev2_received_year = float(team_year_totals["Sev2_Received"].sum())
+    sev3_received_year = float(team_year_totals["Sev3_Received"].sum())
+
+    # Overall contributions per person from full-year people_perf (not month-filtered)
+    people_year = people_perf.copy()
     overall = (
-        people_perf.groupby("Name", as_index=False)[
-            ["Sev2_Contributed", "Sev3_Resolved_RCA", "Sev2_Received", "Sev3_Received"]
-        ]
+        people_year.groupby("Name", as_index=False)[["Sev2_Contributed", "Sev3_Contributed"]]
         .sum()
+        .rename(columns={"Sev2_Contributed": "Sev-2 Contributed", "Sev3_Contributed": "Sev-3 Contributed"})
     )
 
-    overall["Sev2_Contribution_%"] = (
-        overall["Sev2_Contributed"] / overall["Sev2_Received"].replace(0, pd.NA) * 100
-    )
-    overall["Sev3_Resolution_RCA_%"] = (
-        overall["Sev3_Resolved_RCA"] / overall["Sev3_Received"].replace(0, pd.NA) * 100
-    )
+    overall["Sev-2 Contribution %"] = (
+        (overall["Sev-2 Contributed"] / (sev2_received_year if sev2_received_year else 1)) * 100
+    ).round(1)
 
-    for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
-        overall[c] = pd.to_numeric(overall[c], errors="coerce").fillna(0).round(1)
+    overall["Sev-3 Resolution / RCA %"] = (
+        (overall["Sev-3 Contributed"] / (sev3_received_year if sev3_received_year else 1)) * 100
+    ).round(1)
 
-    overall_display = overall[
-        [
-            "Name",
-            "Sev2_Contributed",
-            "Sev2_Contribution_%",
-            "Sev3_Resolved_RCA",
-            "Sev3_Resolution_RCA_%",
-        ]
-    ].rename(
-        columns={
-            "Sev2_Contributed": "Sev2 Contributed",
-            "Sev2_Contribution_%": "Sev2 Contribution %",
-            "Sev3_Resolved_RCA": "Sev3 Contributed",
-            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
-        }
-    ).sort_values("Sev3 Resolution / RCA %", ascending=False)
-    
-    st.dataframe(overall_display, use_container_width=True, hide_index=True)
+    overall["Total Contributed (Sev-2 + Sev-3)"] = (overall["Sev-2 Contributed"] + overall["Sev-3 Contributed"]).astype(int)
 
+    # Sort by total contributed desc
+    overall = overall.sort_values("Total Contributed (Sev-2 + Sev-3)", ascending=False)
 
-    # ---------------- PEOPLE PERFORMANCE (MONTHLY NEXT) ----------------
-    st.markdown("### 👤 People Performance (Monthly)")
+    st.dataframe(overall, use_container_width=True, hide_index=True)
 
-    people_display = people_perf[
-        [
-            "Quarter",
-            "Month",
-            "Name",
-            "Sev2_Contributed",
-            "Sev2_Contribution_%",
-            "Sev3_Resolved_RCA",
-            "Sev3_Resolution_RCA_%",
-        ]
-    ].rename(
-        columns={
-            "Sev2_Contributed": "Sev2 Contributed",
-            "Sev2_Contribution_%": "Sev2 Contribution %",
-            "Sev3_Resolved_RCA": "Sev3 Contributed",
-            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
-        }
-    ).sort_values(["Month", "Name"])
-    
-    st.dataframe(people_display, use_container_width=True, hide_index=True)
+    st.divider()
 
+    st.subheader("👥 People Performance — Monthly")
 
-    # ---------------- Downloads ----------------
-    cdl1, cdl2 = st.columns(2)
+    if people_view.empty:
+        st.info("No people performance rows for the selected month filter.")
+    else:
+        # Monthly denominators from team_perf per month (NOT people file)
+        team_month_den = team_perf.copy()
+        team_month_den["Month"] = team_month_den["Month"].astype(str)
+        team_den = team_month_den.groupby("Month", as_index=False)[["Sev2_Received", "Sev3_Received"]].sum()
 
-    with cdl1:
-        st.download_button(
-            "⬇️ Download Team Performance",
-            data=team_display.to_csv(index=False).encode("utf-8"),
-            file_name=f"team_performance_{selected_year}.csv",
-            mime="text/csv",
+        people_m = people_view.copy()
+        people_m["Month"] = people_m["Month"].astype(str)
+
+        pm = (
+            people_m.groupby(["Month", "Name"], as_index=False)[["Sev2_Contributed", "Sev3_Contributed"]]
+            .sum()
+            .merge(team_den, on="Month", how="left")
         )
 
-    with cdl2:
-        st.download_button(
-            "⬇️ Download People Performance",
-            data=people_display.to_csv(index=False).encode("utf-8"),
-            file_name=f"people_performance_{selected_year}.csv",
-            mime="text/csv",
+        pm["Sev-2 Contribution %"] = (
+            pm["Sev2_Contributed"] / pm["Sev2_Received"].replace(0, pd.NA) * 100
+        ).fillna(0).round(1)
+
+        pm["Sev-3 Resolution / RCA %"] = (
+            pm["Sev3_Contributed"] / pm["Sev3_Received"].replace(0, pd.NA) * 100
+        ).fillna(0).round(1)
+
+        pm = pm.rename(
+            columns={
+                "Sev2_Contributed": "Sev-2 Contributed",
+                "Sev3_Contributed": "Sev-3 Contributed",
+                "Sev2_Received": "Sev-2 Received (Team)",
+                "Sev3_Received": "Sev-3 Received (Team)",
+            }
         )
 
+        pm["Total Contributed (Sev-2 + Sev-3)"] = (pm["Sev-2 Contributed"] + pm["Sev-3 Contributed"]).astype(int)
 
+        # Keep month order like team table
+        pm["Month"] = pd.Categorical(pm["Month"], categories=MONTH_ORDER, ordered=True)
+        pm = pm.sort_values(["Month", "Total Contributed (Sev-2 + Sev-3)"], ascending=[True, False])
+
+        pm_display = pm[
+            [
+                "Month", "Name",
+                "Sev-2 Received (Team)", "Sev-2 Contributed", "Sev-2 Contribution %",
+                "Sev-3 Received (Team)", "Sev-3 Contributed", "Sev-3 Resolution / RCA %",
+                "Total Contributed (Sev-2 + Sev-3)",
+            ]
+        ]
+
+        st.dataframe(pm_display, use_container_width=True, hide_index=True)
