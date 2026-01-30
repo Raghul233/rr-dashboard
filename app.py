@@ -469,10 +469,6 @@ def sort_months(df_: pd.DataFrame, month_col="Month") -> pd.DataFrame:
     return df_.assign(_m=df_[month_col].map(order_map).fillna(999)).sort_values("_m").drop(columns=["_m"])
 
 
-# ✅ IMPORTANT: make sure your tabs line includes tab3 (replace your existing tabs line)
-tab1, tab2, tab3 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Performance"])
-
-
 # ---------- Tab 3: Performance ----------
 with tab3:
     import altair as alt
@@ -807,3 +803,4 @@ with tab3:
         ]
 
         st.dataframe(pm_display, use_container_width=True, hide_index=True)
+
