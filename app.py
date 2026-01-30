@@ -520,16 +520,39 @@ with tab3:
     for c in ["Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]:
         team_perf[c] = pd.to_numeric(team_perf[c], errors="coerce").round(1)
 
+    # Team table with counts + %
     team_display = team_perf[
-        ["Quarter", "Month", "Sev2_Contribution_%", "Sev3_Resolution_RCA_%"]
+        [
+            "Quarter",
+            "Month",
+            "Sev2_Received",
+            "Sev2_Contributed",
+            "Sev2_Contribution_%",
+            "Sev3_Received",
+            "Sev3_Resolved_RCA",
+            "Sev3_Resolution_RCA_%",
+        ]
     ].copy()
-
+    
+    team_display = team_display.rename(
+        columns={
+            "Sev2_Received": "Sev2 Received",
+            "Sev2_Contributed": "Sev2 Contributed",
+            "Sev2_Contribution_%": "Sev2 Contribution %",
+            "Sev3_Received": "Sev3 Received",
+            "Sev3_Resolved_RCA": "Sev3 Resolved/RCA",
+            "Sev3_Resolution_RCA_%": "Sev3 Resolution / RCA %",
+        }
+    )
+    
+    # Keep month order consistent (FEB -> JAN)
     team_display["Month"] = pd.Categorical(
         team_display["Month"], categories=MONTH_ORDER, ordered=True
     )
     team_display = team_display.sort_values("Month")
-
+    
     st.dataframe(team_display, use_container_width=True, hide_index=True)
+
 
     # ---------------- TEAM BAR CHARTS (SIDE BY SIDE + SEPARATOR) ----------------
     st.markdown("### 📊 Team Performance — Visual")
@@ -663,4 +686,5 @@ with tab3:
             file_name=f"people_performance_{selected_year}.csv",
             mime="text/csv",
         )
+
 
