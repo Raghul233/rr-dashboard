@@ -685,7 +685,39 @@ with tab3:
     st.divider()
 
     # =======================
-    # 4) POD TABLE (separate)
+    # 2) TEAM TABLE (with received + contributed counts + %)
+    # =======================
+    st.subheader("🧾 Team Performance — Table")
+
+    team_out = team_view.copy()
+    team_out["Month"] = team_out["Month"].astype(str)
+
+    team_out = team_out[
+        ["Quarter", "Month",
+         "Sev2_Received", "Sev2_Contributed", "Sev2_Contribution_%",
+         "Sev3_Received", "Sev3_Resolved_RCA", "Sev3_Resolution_RCA_%"]
+    ].copy()
+
+    team_out = team_out.rename(
+        columns={
+            "Sev2_Received": "Sev-2 Received",
+            "Sev2_Contributed": "Sev-2 Contributed",
+            "Sev2_Contribution_%": "Sev-2 Contribution %",
+            "Sev3_Received": "Sev-3 Received",
+            "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
+            "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
+        }
+    )
+
+    team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
+    team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
+
+    st.dataframe(team_out, use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    # =======================
+    # 3) POD TABLE (separate)
     # =======================
     st.subheader("🧩 POD Performance — Monthly")
 
@@ -730,39 +762,7 @@ with tab3:
     st.divider()
 
     # =======================
-    # 2) TEAM TABLE (with received + contributed counts + %)
-    # =======================
-    st.subheader("🧾 Team Performance — Table")
-
-    team_out = team_view.copy()
-    team_out["Month"] = team_out["Month"].astype(str)
-
-    team_out = team_out[
-        ["Quarter", "Month",
-         "Sev2_Received", "Sev2_Contributed", "Sev2_Contribution_%",
-         "Sev3_Received", "Sev3_Resolved_RCA", "Sev3_Resolution_RCA_%"]
-    ].copy()
-
-    team_out = team_out.rename(
-        columns={
-            "Sev2_Received": "Sev-2 Received",
-            "Sev2_Contributed": "Sev-2 Contributed",
-            "Sev2_Contribution_%": "Sev-2 Contribution %",
-            "Sev3_Received": "Sev-3 Received",
-            "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
-            "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
-        }
-    )
-
-    team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
-    team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
-
-    st.dataframe(team_out, use_container_width=True, hide_index=True)
-
-    st.divider()
-
-    # =======================
-    # 3) PEOPLE TABLES
+    # 4) PEOPLE TABLES
     # =======================
     st.subheader("👥 People Performance — Overall (Year-to-date)")
 
@@ -832,6 +832,7 @@ with tab3:
         ]
 
         st.dataframe(pm_display, use_container_width=True, hide_index=True)
+
 
 
 
