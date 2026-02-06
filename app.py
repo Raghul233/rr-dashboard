@@ -419,55 +419,174 @@ def load_perf_csv(expected_filename: str, uploader_label: str) -> pd.DataFrame:
     st.info(f"Waiting for {expected_filename}…")
     st.stop()
 
-def normalize_team_perf(df: pd.DataFrame) -> pd.DataFrame:
-    required = ["Year", "Quarter", "Month", "Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        st.error(f"performance_team.csv is missing columns: {missing}")
-        st.stop()
-
-    out = df.copy()
-    out["Year"] = pd.to_numeric(out["Year"], errors="coerce").astype("Int64")
-    out["Quarter"] = out["Quarter"].astype(str).str.strip().str.upper()
-    out["Month"] = out["Month"].astype(str).str.strip().str.upper()
-
-    for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]:
-        out[c] = pd.to_numeric(out[c], errors="coerce").fillna(0).astype(int)
-
-    # Optional: override Quarter using your fiscal mapping (safer)
-    out["Quarter"] = out["Month"].map(MONTH_TO_QUARTER).fillna(out["Quarter"])
-
-    return out
-
-def normalize_people_perf(df: pd.DataFrame) -> pd.DataFrame:
-    required = ["Year", "Quarter", "Month", "Name", "Sev2_Contributed", "Sev3_Resolved_RCA"]
-    missing = [c for c in required if c not in df.columns]
-    if missing:
-        st.error(f"performance_people.csv is missing columns: {missing}")
-        st.stop()
-
-    out = df.copy()
-    out["Year"] = pd.to_numeric(out["Year"], errors="coerce").astype("Int64")
-    out["Quarter"] = out["Quarter"].astype(str).str.strip().str.upper()
-    out["Month"] = out["Month"].astype(str).str.strip().str.upper()
-    out["Name"] = out["Name"].astype(str).str.strip()
-
-    for c in ["Sev2_Contributed", "Sev3_Resolved_RCA"]:
-        out[c] = pd.to_numeric(out[c], errors="coerce").fillna(0).astype(int)
-
-    # Optional: override Quarter using fiscal mapping
-    out["Quarter"] = out["Month"].map(MONTH_TO_QUARTER).fillna(out["Quarter"])
-
-    return out
+def _to_num(s):
+    return pd.to_numeric(s, errors="coerce").fillna(0)
 
 def safe_pct(numer: pd.Series, denom: pd.Series) -> pd.Series:
-    # returns percent (0..100), NaN when denom = 0
+    # returns percent (0..100); 0 when denom = 0
     denom = denom.replace({0: pd.NA})
-    return (numer / denom) * 100
+    return (numer / denom).fillna(0) * 100
 
 def sort_months(df_: pd.DataFrame, month_col="Month") -> pd.DataFrame:
     order_map = {m: i for i, m in enumerate(MONTH_ORDER)}
     return df_.assign(_m=df_[month_col].map(order_map).fillna(999)).sort_values("_m").drop(columns=["_m"])
+
+def normalize_team_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+    dfp = df_in.copy()
+    dfp.columns = [c.strip() for c in dfp.columns]
+
+    # map variants -> canonical
+    colmap = {}
+    for c in dfp.columns:
+        cl = c.strip().lower()
+        if cl == "year":
+            colmap[c] = "Year"
+        elif cl == "quarter":
+            colmap[c] = "Quarter"
+        elif cl == "month":
+            colmap[c] = "Month"
+        elif cl in ["sev2_received", "sev 2 received", "sev2 received"]:
+            colmap[c] = "Sev2_Received"
+        elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
+            colmap[c] = "Sev2_Contributed"
+        elif cl in ["sev3_received", "sev 3 received", "sev3 received"]:
+            colmap[c] = "Sev3_Received"
+        elif cl in [
+            "sev3_contributed", "sev 3 contributed", "sev3 contributed",
+            "sev3_resolved", "sev 3 resolved",
+            "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca",
+            "sev3_resolved / rca"
+        ]:
+            colmap[c] = "Sev3_Resolved_RCA"
+
+    dfp = dfp.rename(columns=colmap)
+
+    required = ["Year", "Quarter", "Month", "Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]
+    missing = [c for c in required if c not in dfp.columns]
+    if missing:
+        st.error(f"{PERF_TEAM_FILE} is missing columns: {missing}")
+        st.stop()
+
+    dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+    dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+    dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+
+    for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]:
+        dfp[c] = _to_num(dfp[c]).astype(int)
+
+    # Optional: override Quarter using fiscal mapping (safer)
+    dfp["Quarter"] = dfp["Month"].map(MONTH_TO_QUARTER).fillna(dfp["Quarter"])
+
+    # % columns (safe divide)
+    dfp["Sev2_Contribution_%"] = safe_pct(dfp["Sev2_Contributed"], dfp["Sev2_Received"])
+    dfp["Sev3_Resolution_RCA_%"] = safe_pct(dfp["Sev3_Resolved_RCA"], dfp["Sev3_Received"])
+
+    # month ordering
+    dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+    dfp = dfp.sort_values(["Quarter", "Month"])
+
+    return dfp
+
+def normalize_people_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+    dfp = df_in.copy()
+    dfp.columns = [c.strip() for c in dfp.columns]
+
+    colmap = {}
+    for c in dfp.columns:
+        cl = c.strip().lower()
+        if cl == "year":
+            colmap[c] = "Year"
+        elif cl == "quarter":
+            colmap[c] = "Quarter"
+        elif cl == "month":
+            colmap[c] = "Month"
+        elif cl == "name":
+            colmap[c] = "Name"
+        elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
+            colmap[c] = "Sev2_Contributed"
+        elif cl in [
+            "sev3_contributed", "sev 3 contributed", "sev3 contributed",
+            "sev3_resolved", "sev 3 resolved",
+            "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca",
+            "sev3_resolved / rca"
+        ]:
+            colmap[c] = "Sev3_Resolved_RCA"
+
+    dfp = dfp.rename(columns=colmap)
+
+    required = ["Year", "Quarter", "Month", "Name", "Sev2_Contributed", "Sev3_Resolved_RCA"]
+    missing = [c for c in required if c not in dfp.columns]
+    if missing:
+        st.error(f"{PERF_PEOPLE_FILE} is missing columns: {missing}")
+        st.stop()
+
+    dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+    dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+    dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+    dfp["Name"] = dfp["Name"].astype(str).str.strip()
+
+    dfp["Sev2_Contributed"] = _to_num(dfp["Sev2_Contributed"]).astype(int)
+    dfp["Sev3_Resolved_RCA"] = _to_num(dfp["Sev3_Resolved_RCA"]).astype(int)
+
+    # Optional: override Quarter using fiscal mapping
+    dfp["Quarter"] = dfp["Month"].map(MONTH_TO_QUARTER).fillna(dfp["Quarter"])
+
+    dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+    dfp = dfp.sort_values(["Quarter", "Month", "Name"])
+
+    return dfp
+
+def normalize_pod_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+    dfp = df_in.copy()
+    dfp.columns = [c.strip() for c in dfp.columns]
+
+    # map variants -> canonical
+    colmap = {}
+    for c in dfp.columns:
+        cl = c.strip().lower()
+        if cl == "year":
+            colmap[c] = "Year"
+        elif cl == "quarter":
+            colmap[c] = "Quarter"
+        elif cl == "month":
+            colmap[c] = "Month"
+        elif cl in ["pods", "pod"]:
+            colmap[c] = "PODS"
+        elif cl in ["sev 2 received", "sev2_received", "sev2 received", "sev2_received "]:
+            colmap[c] = "Sev2_Received"
+        elif cl in ["sev 2 contributed", "sev2_contributed", "sev2 contributed", "sev2 resolved", "sev 2 resolved"]:
+            colmap[c] = "Sev2_Contributed"
+        elif cl in ["sev 3 received", "sev3_received", "sev3 received"]:
+            colmap[c] = "Sev3_Received"
+        elif cl in ["sev 3 resolved / rca", "sev3_resolved_rca", "sev3 resolved / rca", "sev 3 resolved", "sev3 resolved"]:
+            colmap[c] = "Sev3_Resolved_RCA"
+
+    dfp = dfp.rename(columns=colmap)
+
+    required = ["Year", "Quarter", "Month", "PODS", "Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]
+    missing = [c for c in required if c not in dfp.columns]
+    if missing:
+        st.error(f"{PERF_POD_FILE} is missing columns: {missing}")
+        st.stop()
+
+    dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+    dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+    dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+    dfp["PODS"] = dfp["PODS"].astype(str).str.strip().str.upper()
+
+    for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]:
+        dfp[c] = _to_num(dfp[c]).astype(int)
+
+    # Optional: override Quarter using fiscal mapping
+    dfp["Quarter"] = dfp["Month"].map(MONTH_TO_QUARTER).fillna(dfp["Quarter"])
+
+    dfp["Sev2_Contribution_%"] = safe_pct(dfp["Sev2_Contributed"], dfp["Sev2_Received"]).round(1)
+    dfp["Sev3_Resolution_RCA_%"] = safe_pct(dfp["Sev3_Resolved_RCA"], dfp["Sev3_Received"]).round(1)
+
+    dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+    dfp = dfp.sort_values(["Quarter", "Month", "PODS"])
+
+    return dfp
 
 
 # ---------- Tab 3: Performance ----------
@@ -480,135 +599,19 @@ with tab3:
         "Percentages are computed using Team received volumes."
     )
 
-    TEAM_PERF_FILE = "performance_team.csv"
-    PEOPLE_PERF_FILE = "performance_people.csv"
-
-    @st.cache_data
-    def _read_csv_perf(obj) -> pd.DataFrame:
-        d = pd.read_csv(obj)
-        d.columns = [c.strip() for c in d.columns]
-        return d
-
-    def _load_perf_csv(expected_name: str, label: str) -> pd.DataFrame:
-        if os.path.exists(expected_name):
-            return _read_csv_perf(expected_name)
-
-        st.warning(f"'{expected_name}' not found in repo. Upload it below ({label}).")
-        up = st.file_uploader(f"Upload {label} CSV", type=["csv"], key=f"uploader_{expected_name}")
-        if up is not None:
-            return _read_csv_perf(up)
-
-        st.info(f"Waiting for {label} CSV…")
-        st.stop()
-
-    def _to_num(s):
-        return pd.to_numeric(s, errors="coerce").fillna(0)
-
-    def _normalize_team_perf(df_in: pd.DataFrame) -> pd.DataFrame:
-        dfp = df_in.copy()
-        dfp.columns = [c.strip() for c in dfp.columns]
-
-        # map a few possible column variants -> canonical
-        colmap = {}
-        for c in dfp.columns:
-            cl = c.strip().lower()
-            if cl == "year":
-                colmap[c] = "Year"
-            elif cl == "quarter":
-                colmap[c] = "Quarter"
-            elif cl == "month":
-                colmap[c] = "Month"
-            elif cl in ["sev2_received", "sev 2 received", "sev2 received"]:
-                colmap[c] = "Sev2_Received"
-            elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
-                colmap[c] = "Sev2_Contributed"
-            elif cl in ["sev3_received", "sev 3 received", "sev3 received"]:
-                colmap[c] = "Sev3_Received"
-            elif cl in [
-                "sev3_contributed", "sev 3 contributed", "sev3 contributed",
-                "sev3_resolved", "sev 3 resolved",
-                "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca"
-            ]:
-                colmap[c] = "Sev3_Contributed"
-
-        dfp = dfp.rename(columns=colmap)
-
-        required = ["Year", "Quarter", "Month", "Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Contributed"]
-        missing = [c for c in required if c not in dfp.columns]
-        if missing:
-            st.error(f"performance_team.csv is missing columns: {missing}")
-            st.stop()
-
-        dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
-        dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
-        dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
-
-        for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Contributed"]:
-            dfp[c] = _to_num(dfp[c])
-
-        # % columns (safe divide)
-        dfp["Sev2_Contribution_%"] = (dfp["Sev2_Contributed"] / dfp["Sev2_Received"].replace(0, pd.NA) * 100).fillna(0)
-        dfp["Sev3_Resolution_RCA_%"] = (dfp["Sev3_Contributed"] / dfp["Sev3_Received"].replace(0, pd.NA) * 100).fillna(0)
-
-        # month ordering
-        dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
-        dfp = dfp.sort_values(["Quarter", "Month"])
-        return dfp
-
-    def _normalize_people_perf(df_in: pd.DataFrame) -> pd.DataFrame:
-        dfp = df_in.copy()
-        dfp.columns = [c.strip() for c in dfp.columns]
-
-        colmap = {}
-        for c in dfp.columns:
-            cl = c.strip().lower()
-            if cl == "year":
-                colmap[c] = "Year"
-            elif cl == "quarter":
-                colmap[c] = "Quarter"
-            elif cl == "month":
-                colmap[c] = "Month"
-            elif cl == "name":
-                colmap[c] = "Name"
-            elif cl in ["sev2_contributed", "sev 2 contributed", "sev2 contributed", "sev2_resolved", "sev 2 resolved"]:
-                colmap[c] = "Sev2_Contributed"
-            elif cl in [
-                "sev3_contributed", "sev 3 contributed", "sev3 contributed",
-                "sev3_resolved", "sev 3 resolved",
-                "sev3 resolved / contributed to rca", "sev3_resolved_rca", "sev3_resolution_rca"
-            ]:
-                colmap[c] = "Sev3_Contributed"
-
-        dfp = dfp.rename(columns=colmap)
-
-        required = ["Year", "Quarter", "Month", "Name", "Sev2_Contributed", "Sev3_Contributed"]
-        missing = [c for c in required if c not in dfp.columns]
-        if missing:
-            st.error(f"performance_people.csv is missing columns: {missing}")
-            st.stop()
-
-        dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
-        dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
-        dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
-        dfp["Name"] = dfp["Name"].astype(str).str.strip()
-
-        dfp["Sev2_Contributed"] = _to_num(dfp["Sev2_Contributed"])
-        dfp["Sev3_Contributed"] = _to_num(dfp["Sev3_Contributed"])
-
-        dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
-        dfp = dfp.sort_values(["Quarter", "Month", "Name"])
-        return dfp
-
     # --- Load performance files ---
-    team_raw = _load_perf_csv(TEAM_PERF_FILE, "Team performance")
-    people_raw = _load_perf_csv(PEOPLE_PERF_FILE, "People performance")
+    team_raw = load_perf_csv(PERF_TEAM_FILE, f"Upload {PERF_TEAM_FILE}")
+    people_raw = load_perf_csv(PERF_PEOPLE_FILE, f"Upload {PERF_PEOPLE_FILE}")
+    pod_raw = load_perf_csv(PERF_POD_FILE, f"Upload {PERF_POD_FILE}")
 
-    team_perf_all = _normalize_team_perf(team_raw)
-    people_perf_all = _normalize_people_perf(people_raw)
+    team_perf_all = normalize_team_perf(team_raw)
+    people_perf_all = normalize_people_perf(people_raw)
+    pod_perf_all = normalize_pod_perf(pod_raw)
 
     # --- Filter to selected year ---
     team_perf = team_perf_all[team_perf_all["Year"] == selected_year].copy()
     people_perf = people_perf_all[people_perf_all["Year"] == selected_year].copy()
+    pod_perf = pod_perf_all[pod_perf_all["Year"] == selected_year].copy()
 
     if team_perf.empty:
         st.warning(f"No team performance rows found for {selected_year}.")
@@ -625,25 +628,24 @@ with tab3:
 
     team_view = team_perf.copy()
     people_view = people_perf.copy()
+    pod_view = pod_perf.copy()
 
     if month_filter != "All":
         team_view = team_view[team_view["Month"].astype(str) == month_filter]
         people_view = people_view[people_view["Month"].astype(str) == month_filter]
+        pod_view = pod_view[pod_view["Month"].astype(str) == month_filter]
 
     # =======================
     # 1) TEAM CHARTS (side-by-side) + separator between graphs
     # =======================
     st.subheader("📊 Team Performance — Visual")
 
-    # For charts, always use the filtered team_view
     chart_base = team_view.copy()
     chart_base["Month"] = chart_base["Month"].astype(str)
 
-    # Force numeric (prevents dtype issues)
     chart_base["Sev2_Contribution_%"] = pd.to_numeric(chart_base["Sev2_Contribution_%"], errors="coerce").fillna(0)
     chart_base["Sev3_Resolution_RCA_%"] = pd.to_numeric(chart_base["Sev3_Resolution_RCA_%"], errors="coerce").fillna(0)
 
-    # Layout with a vertical separator column
     left, sep, right = st.columns([1, 0.03, 1])
 
     with left:
@@ -693,7 +695,7 @@ with tab3:
     team_out = team_out[
         ["Quarter", "Month",
          "Sev2_Received", "Sev2_Contributed", "Sev2_Contribution_%",
-         "Sev3_Received", "Sev3_Contributed", "Sev3_Resolution_RCA_%"]
+         "Sev3_Received", "Sev3_Resolved_RCA", "Sev3_Resolution_RCA_%"]
     ].copy()
 
     team_out = team_out.rename(
@@ -702,12 +704,11 @@ with tab3:
             "Sev2_Contributed": "Sev-2 Contributed",
             "Sev2_Contribution_%": "Sev-2 Contribution %",
             "Sev3_Received": "Sev-3 Received",
-            "Sev3_Contributed": "Sev-3 Contributed",
+            "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
             "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
         }
     )
 
-    # Round %
     team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
     team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
 
@@ -717,35 +718,24 @@ with tab3:
 
     # =======================
     # 3) PEOPLE TABLES
-    #    - Overall first
-    #    - Monthly next (both include counts + %)
     # =======================
     st.subheader("👥 People Performance — Overall (Year-to-date)")
 
-    # Use *year* received totals from team_perf (not month-filtered) for overall denominators
-    team_year_totals = team_perf.copy()
+    team_year_totals = team_perf.copy()  # full-year denominators
     sev2_received_year = float(team_year_totals["Sev2_Received"].sum())
     sev3_received_year = float(team_year_totals["Sev3_Received"].sum())
 
-    # Overall contributions per person from full-year people_perf (not month-filtered)
     people_year = people_perf.copy()
     overall = (
-        people_year.groupby("Name", as_index=False)[["Sev2_Contributed", "Sev3_Contributed"]]
+        people_year.groupby("Name", as_index=False)[["Sev2_Contributed", "Sev3_Resolved_RCA"]]
         .sum()
-        .rename(columns={"Sev2_Contributed": "Sev-2 Contributed", "Sev3_Contributed": "Sev-3 Contributed"})
+        .rename(columns={"Sev2_Contributed": "Sev-2 Contributed", "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA"})
     )
 
-    overall["Sev-2 Contribution %"] = (
-        (overall["Sev-2 Contributed"] / (sev2_received_year if sev2_received_year else 1)) * 100
-    ).round(1)
+    overall["Sev-2 Contribution %"] = ((overall["Sev hookup"] if False else overall["Sev-2 Contributed"]) / (sev2_received_year if sev2_received_year else 1) * 100).round(1)
+    overall["Sev-3 Resolution / RCA %"] = ((overall["Sev-3 Resolved / RCA"]) / (sev3_received_year if sev3_received_year else 1) * 100).round(1)
 
-    overall["Sev-3 Resolution / RCA %"] = (
-        (overall["Sev-3 Contributed"] / (sev3_received_year if sev3_received_year else 1)) * 100
-    ).round(1)
-
-    overall["Total Contributed (Sev-2 + Sev-3)"] = (overall["Sev-2 Contributed"] + overall["Sev-3 Contributed"]).astype(int)
-
-    # Sort by total contributed desc
+    overall["Total Contributed (Sev-2 + Sev-3)"] = (overall["Sev-2 Contributed"] + overall["Sev-3 Resolved / RCA"]).astype(int)
     overall = overall.sort_values("Total Contributed (Sev-2 + Sev-3)", ascending=False)
 
     st.dataframe(overall, use_container_width=True, hide_index=True)
@@ -757,7 +747,6 @@ with tab3:
     if people_view.empty:
         st.info("No people performance rows for the selected month filter.")
     else:
-        # Monthly denominators from team_perf per month (NOT people file)
         team_month_den = team_perf.copy()
         team_month_den["Month"] = team_month_den["Month"].astype(str)
         team_den = team_month_den.groupby("Month", as_index=False)[["Sev2_Received", "Sev3_Received"]].sum()
@@ -766,31 +755,25 @@ with tab3:
         people_m["Month"] = people_m["Month"].astype(str)
 
         pm = (
-            people_m.groupby(["Month", "Name"], as_index=False)[["Sev2_Contributed", "Sev3_Contributed"]]
+            people_m.groupby(["Month", "Name"], as_index=False)[["Sev2_Contributed", "Sev3_Resolved_RCA"]]
             .sum()
             .merge(team_den, on="Month", how="left")
         )
 
-        pm["Sev-2 Contribution %"] = (
-            pm["Sev2_Contributed"] / pm["Sev2_Received"].replace(0, pd.NA) * 100
-        ).fillna(0).round(1)
-
-        pm["Sev-3 Resolution / RCA %"] = (
-            pm["Sev3_Contributed"] / pm["Sev3_Received"].replace(0, pd.NA) * 100
-        ).fillna(0).round(1)
+        pm["Sev-2 Contribution %"] = safe_pct(pm["Sev2_Contributed"], pm["Sev2_Received"]).round(1)
+        pm["Sev-3 Resolution / RCA %"] = safe_pct(pm["Sev3_Resolved_RCA"], pm["Sev3_Received"]).round(1)
 
         pm = pm.rename(
             columns={
                 "Sev2_Contributed": "Sev-2 Contributed",
-                "Sev3_Contributed": "Sev-3 Contributed",
+                "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
                 "Sev2_Received": "Sev-2 Received (Team)",
                 "Sev3_Received": "Sev-3 Received (Team)",
             }
         )
 
-        pm["Total Contributed (Sev-2 + Sev-3)"] = (pm["Sev-2 Contributed"] + pm["Sev-3 Contributed"]).astype(int)
+        pm["Total Contributed (Sev-2 + Sev-3)"] = (pm["Sev-2 Contributed"] + pm["Sev-3 Resolved / RCA"]).astype(int)
 
-        # Keep month order like team table
         pm["Month"] = pd.Categorical(pm["Month"], categories=MONTH_ORDER, ordered=True)
         pm = pm.sort_values(["Month", "Total Contributed (Sev-2 + Sev-3)"], ascending=[True, False])
 
@@ -798,11 +781,54 @@ with tab3:
             [
                 "Month", "Name",
                 "Sev-2 Received (Team)", "Sev-2 Contributed", "Sev-2 Contribution %",
-                "Sev-3 Received (Team)", "Sev-3 Contributed", "Sev-3 Resolution / RCA %",
+                "Sev-3 Received (Team)", "Sev-3 Resolved / RCA", "Sev-3 Resolution / RCA %",
                 "Total Contributed (Sev-2 + Sev-3)",
             ]
         ]
 
         st.dataframe(pm_display, use_container_width=True, hide_index=True)
 
+    st.divider()
 
+    # =======================
+    # 4) POD TABLE (separate)
+    # =======================
+    st.subheader("🧩 POD Performance — Monthly")
+
+    if pod_view.empty:
+        st.info("No POD performance rows for the selected month filter.")
+    else:
+        pod_out = pod_view.copy()
+        pod_out["Month"] = pod_out["Month"].astype(str)
+
+        pod_out = pod_out.rename(
+            columns={
+                "Sev2_Received": "Sev-2 Received",
+                "Sev2_Contributed": "Sev-2 Contributed",
+                "Sev2_Contribution_%": "Sev-2 Contribution %",
+                "Sev3_Received": "Sev-3 Received",
+                "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
+                "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
+            }
+        )
+
+        # Ensure % are rounded for display
+        if "Sev-2 Contribution %" in pod_out.columns:
+            pod_out["Sev-2 Contribution %"] = pd.to_numeric(pod_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
+        if "Sev-3 Resolution / RCA %" in pod_out.columns:
+            pod_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(pod_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
+
+        pod_display_cols = [
+            "Quarter", "Month", "PODS",
+            "Sev-2 Received", "Sev-2 Contributed", "Sev-2 Contribution %",
+            "Sev-3 Received", "Sev-3 Resolved / RCA", "Sev-3 Resolution / RCA %",
+        ]
+        pod_display_cols = [c for c in pod_display_cols if c in pod_out.columns]
+
+        st.dataframe(
+            pod_out[pod_display_cols].sort_values(
+                [c for c in ["Quarter", "Month", "PODS"] if c in pod_out.columns]
+            ),
+            use_container_width=True,
+            hide_index=True
+        )
