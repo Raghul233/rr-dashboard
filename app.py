@@ -685,6 +685,51 @@ with tab3:
     st.divider()
 
     # =======================
+    # 4) POD TABLE (separate)
+    # =======================
+    st.subheader("🧩 POD Performance — Monthly")
+
+    if pod_view.empty:
+        st.info("No POD performance rows for the selected month filter.")
+    else:
+        pod_out = pod_view.copy()
+        pod_out["Month"] = pod_out["Month"].astype(str)
+
+        pod_out = pod_out.rename(
+            columns={
+                "Sev2_Received": "Sev-2 Received",
+                "Sev2_Contributed": "Sev-2 Contributed",
+                "Sev2_Contribution_%": "Sev-2 Contribution %",
+                "Sev3_Received": "Sev-3 Received",
+                "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
+                "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
+            }
+        )
+
+        # Ensure % are rounded for display
+        if "Sev-2 Contribution %" in pod_out.columns:
+            pod_out["Sev-2 Contribution %"] = pd.to_numeric(pod_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
+        if "Sev-3 Resolution / RCA %" in pod_out.columns:
+            pod_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(pod_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
+
+        pod_display_cols = [
+            "Quarter", "Month", "PODS",
+            "Sev-2 Received", "Sev-2 Contributed", "Sev-2 Contribution %",
+            "Sev-3 Received", "Sev-3 Resolved / RCA", "Sev-3 Resolution / RCA %",
+        ]
+        pod_display_cols = [c for c in pod_display_cols if c in pod_out.columns]
+
+        st.dataframe(
+            pod_out[pod_display_cols].sort_values(
+                [c for c in ["Quarter", "Month", "PODS"] if c in pod_out.columns]
+            ),
+            use_container_width=True,
+            hide_index=True
+        )
+        
+    st.divider()
+
+    # =======================
     # 2) TEAM TABLE (with received + contributed counts + %)
     # =======================
     st.subheader("🧾 Team Performance — Table")
@@ -788,47 +833,6 @@ with tab3:
 
         st.dataframe(pm_display, use_container_width=True, hide_index=True)
 
-    st.divider()
 
-    # =======================
-    # 4) POD TABLE (separate)
-    # =======================
-    st.subheader("🧩 POD Performance — Monthly")
 
-    if pod_view.empty:
-        st.info("No POD performance rows for the selected month filter.")
-    else:
-        pod_out = pod_view.copy()
-        pod_out["Month"] = pod_out["Month"].astype(str)
 
-        pod_out = pod_out.rename(
-            columns={
-                "Sev2_Received": "Sev-2 Received",
-                "Sev2_Contributed": "Sev-2 Contributed",
-                "Sev2_Contribution_%": "Sev-2 Contribution %",
-                "Sev3_Received": "Sev-3 Received",
-                "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
-                "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
-            }
-        )
-
-        # Ensure % are rounded for display
-        if "Sev-2 Contribution %" in pod_out.columns:
-            pod_out["Sev-2 Contribution %"] = pd.to_numeric(pod_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
-        if "Sev-3 Resolution / RCA %" in pod_out.columns:
-            pod_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(pod_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
-
-        pod_display_cols = [
-            "Quarter", "Month", "PODS",
-            "Sev-2 Received", "Sev-2 Contributed", "Sev-2 Contribution %",
-            "Sev-3 Received", "Sev-3 Resolved / RCA", "Sev-3 Resolution / RCA %",
-        ]
-        pod_display_cols = [c for c in pod_display_cols if c in pod_out.columns]
-
-        st.dataframe(
-            pod_out[pod_display_cols].sort_values(
-                [c for c in ["Quarter", "Month", "PODS"] if c in pod_out.columns]
-            ),
-            use_container_width=True,
-            hide_index=True
-        )
