@@ -764,7 +764,6 @@ with tab3:
         )
         
         st.dataframe(styled_pod, use_container_width=True, hide_index=True)
-        )
         
     st.divider()
 
@@ -851,6 +850,7 @@ with tab3:
     )
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+
 
 
 
