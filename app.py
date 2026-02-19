@@ -712,7 +712,13 @@ with tab3:
     team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
     team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
 
-    st.dataframe(team_out, use_container_width=True, hide_index=True)
+    percent_cols = ["Sev-2 Contribution %", "Sev-3 Resolution / RCA %"]
+
+    styled_team = team_out.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in team_out.columns}
+    )
+    
+    st.dataframe(styled_team, use_container_width=True, hide_index=True)
 
     st.divider()
 
@@ -832,6 +838,7 @@ with tab3:
         ]
 
         st.dataframe(pm_display, use_container_width=True, hide_index=True)
+
 
 
 
