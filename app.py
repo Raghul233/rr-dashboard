@@ -757,12 +757,13 @@ with tab3:
         ]
         pod_display_cols = [c for c in pod_display_cols if c in pod_out.columns]
 
-        st.dataframe(
-            pod_out[pod_display_cols].sort_values(
-                [c for c in ["Quarter", "Month", "PODS"] if c in pod_out.columns]
-            ),
-            use_container_width=True,
-            hide_index=True
+        percent_cols = ["Sev-2 Contribution %", "Sev-3 Resolution / RCA %"]
+        
+        styled_pod = pod_out[pod_display_cols].style.format(
+            {col: "{:.1f}%" for col in percent_cols if col in pod_out.columns}
+        )
+        
+        st.dataframe(styled_pod, use_container_width=True, hide_index=True)
         )
         
     st.divider()
@@ -850,6 +851,7 @@ with tab3:
     )
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+
 
 
 
