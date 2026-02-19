@@ -789,7 +789,13 @@ with tab3:
     overall["Total Contributed (Sev-2 + Sev-3)"] = (overall["Sev-2 Contributed"] + overall["Sev-3 Resolved / RCA"]).astype(int)
     overall = overall.sort_values("Total Contributed (Sev-2 + Sev-3)", ascending=False)
 
-    st.dataframe(overall, use_container_width=True, hide_index=True)
+    percent_cols = ["Sev-2 Contribution %", "Sev-3 Resolution / RCA %"]
+
+    styled_overall = overall.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in overall.columns}
+    )
+    
+    st.dataframe(styled_overall, use_container_width=True, hide_index=True)
 
     st.divider()
 
@@ -837,7 +843,14 @@ with tab3:
             ]
         ]
 
-        st.dataframe(pm_display, use_container_width=True, hide_index=True)
+    percent_cols = ["Sev-2 Contribution %", "Sev-3 Resolution / RCA %"]
+
+    styled_pm = pm_display.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in pm_display.columns}
+    )
+    
+    st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+
 
 
 
