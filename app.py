@@ -367,19 +367,12 @@ with tab2:
     
     display_df = filtered.drop(columns=["Year"], errors="ignore").copy()
     
-    # ---- Move Quarter right after Month ----
+    # ---- Move Quarter to first column ----
     cols = display_df.columns.tolist()
     
     if "Quarter" in cols:
         cols.remove("Quarter")
-    
-        if "Month" in cols:
-            month_index = cols.index("Month")
-            cols.insert(month_index + 1, "Quarter")
-        else:
-            # fallback: put Quarter first if Month missing
-            cols.insert(0, "Quarter")
-    
+        cols = ["Quarter"] + cols
         display_df = display_df[cols]
     
     # ---- Slack column detection ----
@@ -401,7 +394,6 @@ with tab2:
         )
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
-
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
@@ -867,6 +859,7 @@ with tab3:
     )
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+
 
 
 
