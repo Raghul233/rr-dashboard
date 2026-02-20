@@ -394,6 +394,7 @@ with tab2:
         )
     else:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
+        
     st.download_button(
         "⬇️ Download filtered CSV",
         data=filtered.to_csv(index=False).encode("utf-8"),
@@ -859,6 +860,7 @@ with tab3:
     )
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+
 
 
 
