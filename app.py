@@ -1106,75 +1106,137 @@ with tab4:
 
     st.divider()
 
-    # -------------------------------
-    # POD Command Center
-    # -------------------------------
-    st.markdown("## 🧩 POD Performance Command Center")
-    st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
+        # -------------------------------
+        # POD Command Center
+        # -------------------------------
+        title_left, legend_right = st.columns([1.4, 1])
 
-    pod_cols = st.columns(5)
+        with title_left:
+            st.subheader("🧩 POD Performance Command Center")
 
-    for idx, row in pod_master.reset_index(drop=True).iterrows():
-        resolve_pct = float(row["L1 Resolved %"])
-        l2_pct_local = float(row["Moved to L2 %"])
-        pod_name = str(row["PODS"])
+        with legend_right:
+            st.markdown(
+                """
+                <div style="text-align:right; font-size:13px; margin-top:8px;">
+                    <span style="color:#60a5fa;font-weight:800;">■ Sev-3</span>
+                    &nbsp;&nbsp;
+                    <span style="color:#a78bfa;font-weight:800;">■ Sev-2</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        with pod_cols[idx % 5]:
-            with st.container(border=True):
-                st.markdown(
-                    f"""
-                    <div style="
-                        min-height:72px;
-                        font-size:24px;
-                        font-weight:900;
-                        line-height:1.15;
-                        color:white;
-                        margin-bottom:8px;
-                        overflow-wrap:break-word;
-                    ">
-                        🧩 {pod_name}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        pod_card_cols = st.columns(5)
 
-                st.metric("Total Issues", int(row["Total Issues"]))
+        for idx, row in pod_master.reset_index(drop=True).iterrows():
+            pod_name = str(row["PODS"])
 
-                sev1, sev2 = st.columns(2)
-                with sev1:
-                    st.metric("Sev 2", int(row["Sev2_Received"]))
-                with sev2:
-                    st.metric("Sev 3", int(row["Sev3_Received"]))
+            total = int(row["Total Issues"])
+            sev2_received = int(row["Sev2_Received"])
+            sev3_received = int(row["Sev3_Received"])
 
-                st.markdown("**✅ L1 Resolve Rate**")
-                st.progress(min(resolve_pct / 100, 1.0))
-                st.markdown(
-                    f"""
-                    <div style="font-size:24px;font-weight:900;color:#86efac;">
-                        {resolve_pct:.1f}%
-                    </div>
-                    <div style="font-size:12px;color:#AEB6C2;margin-bottom:10px;">
-                        {int(row["L1 Resolved"])} resolved within L1
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            sev2_l1 = int(row["Sev2_Contributed"])
+            sev3_l1 = int(row["Sev3_Resolved_RCA"])
 
-                st.markdown("**⬆️ Moved to L2**")
-                st.progress(min(l2_pct_local / 100, 1.0))
-                st.markdown(
-                    f"""
-                    <div style="font-size:22px;font-weight:900;color:#fbbf24;">
-                        {l2_pct_local:.1f}%
-                    </div>
-                    <div style="font-size:12px;color:#AEB6C2;">
-                        {int(row["Moved to L2"])} escalated
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            sev2_l2 = max(sev2_received - sev2_l1, 0)
+            sev3_l2 = max(sev3_received - sev3_l1, 0)
 
-    st.divider()
+            l1_total_local = sev2_l1 + sev3_l1
+            l2_total_local = sev2_l2 + sev3_l2
+
+            l1_pct_local = (l1_total_local / total * 100) if total else 0
+            l2_pct_local = (l2_total_local / total * 100) if total else 0
+
+            sev3_l1_pct = (sev3_l1 / total * 100) if total else 0
+            sev2_l1_pct = (sev2_l1 / total * 100) if total else 0
+
+            sev3_l2_pct = (sev3_l2 / total * 100) if total else 0
+            sev2_l2_pct = (sev2_l2 / total * 100) if total else 0
+
+            with pod_card_cols[idx % 5]:
+                with st.container(border=True):
+                    st.markdown(
+                        f"""
+                        <div style="
+                            min-height:46px;
+                            font-size:16px;
+                            font-weight:900;
+                            color:white;
+                            margin-bottom:8px;
+                        ">
+                            🧩 {pod_name}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    st.metric("Total", total)
+
+                    s1, s2 = st.columns(2)
+                    with s1:
+                        st.metric("Sev 2", sev2_received)
+                    with s2:
+                        st.metric("Sev 3", sev3_received)
+
+                    # L1 segmented bar
+                    st.markdown(
+                        f"""
+                        <div style="font-size:12px;font-weight:800;margin-top:8px;">✅ L1 %</div>
+
+                        <div style="
+                            width:100%;
+                            height:9px;
+                            background:#1f2937;
+                            border-radius:999px;
+                            overflow:hidden;
+                            display:flex;
+                            margin-top:6px;
+                        ">
+                            <div style="width:{sev3_l1_pct}%; background:#60a5fa;"></div>
+                            <div style="width:{sev2_l1_pct}%; background:#a78bfa;"></div>
+                        </div>
+
+                        <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:6px;">
+                            {l1_pct_local:.1f}%
+                        </div>
+
+                        <div style="font-size:11px;color:#AEB6C2;">
+                            Sev-3: {sev3_l1} | Sev-2: {sev2_l1}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    # L2 segmented bar
+                    st.markdown(
+                        f"""
+                        <div style="font-size:12px;font-weight:800;margin-top:10px;">⬆️ L2 %</div>
+
+                        <div style="
+                            width:100%;
+                            height:9px;
+                            background:#1f2937;
+                            border-radius:999px;
+                            overflow:hidden;
+                            display:flex;
+                            margin-top:6px;
+                        ">
+                            <div style="width:{sev3_l2_pct}%; background:#60a5fa;"></div>
+                            <div style="width:{sev2_l2_pct}%; background:#a78bfa;"></div>
+                        </div>
+
+                        <div style="font-size:17px;font-weight:900;color:#fbbf24;margin-top:6px;">
+                            {l2_pct_local:.1f}%
+                        </div>
+
+                        <div style="font-size:11px;color:#AEB6C2;">
+                            Sev-3: {sev3_l2} | Sev-2: {sev2_l2}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+        st.divider()
 
     # -------------------------------
     # Leadership Trend View
