@@ -1830,7 +1830,7 @@ components.html(
     // Find ONLY the L1 heading that appears AFTER the Landscape Export expander
     const landscapeHeading = headings.find(el =>
         el.innerText &&
-        el.innerText.includes("L1 Ops Master Performance View") &&
+        el.innerText.includes("L1 Ops Master Performance View - 2026") &&
         el.getBoundingClientRect().top > expanderTop
     );
 
