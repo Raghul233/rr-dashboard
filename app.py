@@ -1501,7 +1501,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
         st.metric(
             "✅ L1 Resolved",
             f"{l1_total}",
-            f"{overall_l1_pct:.1f}%"
+            f"{l1_pct:.1f}%"
         )
 
     with k3:
