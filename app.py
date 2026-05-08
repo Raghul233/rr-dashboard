@@ -1469,7 +1469,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
                 margin-top:10px;
                 line-height:1;
             ">
-                {overall_resolved_pct:.1f}% resolved within L1
+                {l1_pct:.1f}% resolved within L1
             </div>
 
             <div style="
