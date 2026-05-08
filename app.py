@@ -1514,7 +1514,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
     with k4:
         st.metric(
             "📊 Sev2 / Sev3",
-            f"{total_sev2} / {total_sev3}"
+            f"{sev2_total / sev3_total}"
         )
 
     with k5:
