@@ -1631,7 +1631,6 @@ with tab4:
             unsafe_allow_html=True,
         )
 
-        )
         pivot = pivot.loc[ordered_pairs]
 
     cols = list(pivot.columns)
