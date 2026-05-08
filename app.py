@@ -2963,420 +2963,581 @@ with tab4:
     st.divider()
 
     # =========================================================
-    # LANDSCAPE EXPORT VIEW (ONLY FOR PNG EXPORT)
-    # =========================================================
-    with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
-    
-        # ---------- START MARKER ----------
-        st.markdown(
-            '<div id="landscape-export-start"></div>',
-            unsafe_allow_html=True
-        )
-    
-        st.markdown(
-            f"""
-            <div style="padding-top:10px; padding-bottom:10px;">
-                <h1 style="font-size:52px; margin-bottom:8px;">
-                    🌟 L1 Ops Master Performance View — {selected_year}
-                </h1>
-    
-                <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                    Export view optimized for leadership snapshot |
-                    Month: <b>{'All / YTD' if master_month_filter == 'All' else master_month_filter.title()}</b>
-                </div>
+# LANDSCAPE EXPORT VIEW FOR PNG
+# =========================================================
+with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
+
+    # ---------- START MARKER ----------
+    st.markdown(
+        '<div id="landscape-export-start"></div>',
+        unsafe_allow_html=True,
+    )
+
+    export_month_label = "All / YTD" if master_month_filter == "All" else master_month_filter.title()
+    impact_month_label = "YTD" if master_month_filter == "All" else master_month_filter.title()
+
+    st.markdown(
+        f"""
+        <div style="padding-top:10px; padding-bottom:10px;">
+            <h1 style="font-size:52px; margin-bottom:8px;">
+                🌟 L1 Ops Master Performance View — {selected_year}
+            </h1>
+
+            <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
+                Export view optimized for leadership snapshot |
+                Month: <b>{export_month_label}</b>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    
-        # =====================================================
-        # IMPACT BANNER
-        # =====================================================
-        st.markdown(
-            f"""
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # =====================================================
+    # IMPACT BANNER
+    # =====================================================
+    st.markdown(
+        f"""
+        <div style="
+            background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+            padding:28px;
+            border-radius:18px;
+            border:1px solid rgba(74,222,128,0.35);
+            margin-bottom:25px;
+        ">
+            <div style="font-size:24px; font-weight:800; color:#bbf7d0;">
+                💡 L1 Impact Created — {impact_month_label}
+            </div>
+
             <div style="
-                background:linear-gradient(90deg,#0B6623,#1B998B);
-                padding:28px;
-                border-radius:18px;
-                border:1px solid rgba(255,255,255,0.15);
-                margin-bottom:25px;
+                font-size:58px;
+                font-weight:950;
+                margin-top:10px;
+                line-height:1;
+                color:white;
             ">
-                <div style="font-size:24px; font-weight:700;">
-                    💡 L1 Impact Created — {'YTD' if master_month_filter == 'All' else master_month_filter.title()}
-                </div>
-    
-                <div style="
-                    font-size:58px;
-                    font-weight:900;
-                    margin-top:10px;
-                    line-height:1;
-                ">
-                    {l1_pct:.1f}% resolved within L1
-                </div>
-    
-                <div style="
-                    margin-top:15px;
-                    font-size:22px;
-                    color:#F8F9F9;
-                ">
-                    L1 Ops resolved {l1_total} of
-                    {total_issues} total issues,
-                    reducing L2 dependency and saving escalation bandwidth.
-                </div>
+                {l1_pct:.1f}% resolved within L1
             </div>
-            """,
-            unsafe_allow_html=True,
+
+            <div style="
+                margin-top:15px;
+                font-size:22px;
+                color:#dcfce7;
+                font-weight:650;
+            ">
+                L1 Ops resolved {l1_total} of {total_issues} total issues,
+                reducing L2 dependency and saving escalation bandwidth.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # =====================================================
+    # KPI ROW
+    # =====================================================
+    k1, k2, k3, k4, k5 = st.columns(5)
+
+    with k1:
+        st.metric("🚨 Total Issues", f"{total_issues}")
+
+    with k2:
+        st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
+
+    with k3:
+        st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
+
+    with k4:
+        st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
+
+    with k5:
+        best_pod_export = (
+            pod_master.sort_values("L1 Resolved %", ascending=False)
+            .iloc[0]["PODS"]
         )
-    
-        # =====================================================
-        # KPI ROW
-        # =====================================================
-        k1, k2, k3, k4, k5 = st.columns(5)
-    
-        with k1:
-            st.metric("🚨 Total Issues", f"{total_issues}")
-    
-        with k2:
-            st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
-    
-        with k3:
-            st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
-    
-        with k4:
-            st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
-    
-        with k5:
-            best_pod_export = (
-                pod_master.sort_values("L1 Resolved %", ascending=False)
-                .iloc[0]["PODS"]
-            )
-            st.metric("🏅 Best POD", best_pod_export)
-    
-        st.divider()
-    
-        # =====================================================
-        # TABLE + TREND
-        # =====================================================
-        left_export, right_export = st.columns([1.5, 1])
-    
-        with left_export:
-            st.subheader("🧩 POD Performance")
-    
-            export_pod_table = pod_master.rename(
-                columns={
-                    "PODS": "POD",
-                    "Sev2_Received": "Sev-2 Received",
-                    "Sev3_Received": "Sev-3 Received",
-                }
-            )[
-                [
-                    "POD",
-                    "Total Issues",
-                    "Sev-2 Received",
-                    "Sev-3 Received",
-                    "L1 Resolved",
-                    "L1 Resolved %",
-                    "Moved to L2",
-                    "Moved to L2 %",
-                ]
-            ].copy()
-    
-            styled_export_pod_table = export_pod_table.style.format(
-                {
-                    "L1 Resolved %": "{:.1f}%",
-                    "Moved to L2 %": "{:.1f}%",
-                }
-            )
-    
-            st.dataframe(
-                styled_export_pod_table,
-                use_container_width=True,
-                hide_index=True,
-                height=320,
-            )
-    
-        with right_export:
-            st.subheader("📈 Trend View")
-    
-            trend_chart_export = (
-                alt.Chart(pod_master)
-                .mark_bar()
-                .encode(
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    x=alt.X(
-                        "L1 Resolved %:Q",
-                        scale=alt.Scale(domain=[0, 100]),
-                        title="L1 %",
-                    ),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("L1 Resolved %:Q", format=".1f"),
-                    ],
-                )
-                .properties(height=280)
-            )
-    
-            st.altair_chart(trend_chart_export, use_container_width=True)
-    
-        # =====================================================
-        # POD RANKING + PEOPLE TABLE
-        # =====================================================
-        left_bottom, right_bottom = st.columns([1, 1])
-    
-        with left_bottom:
-            st.subheader("🏆 POD Resolve Ranking")
-    
-            ranking_chart = (
-                alt.Chart(
-                    pod_master.sort_values("L1 Resolved %", ascending=False)
-                )
-                .mark_bar()
-                .encode(
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    x=alt.X(
-                        "L1 Resolved %:Q",
-                        scale=alt.Scale(domain=[0, 100]),
-                        title="L1 Resolved %",
-                    ),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("L1 Resolved %:Q", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-    
-            st.altair_chart(ranking_chart, use_container_width=True)
-    
-        with right_bottom:
-            st.subheader("👥 People Performance")
-    
-            export_people = people_summary_mv[
-                [
-                    "Person",
-                    "Sev-2",
-                    "Sev-3",
-                    "Total Contribution",
-                ]
-            ].copy()
-    
-            st.dataframe(
-                export_people,
-                use_container_width=True,
-                hide_index=True,
-                height=260,
-            )
-    
-        # ---------- END MARKER ----------
-        st.markdown(
-            '<div id="landscape-export-end"></div>',
-            unsafe_allow_html=True,
-        )
-    # =========================================================
-        # EXPORT SECTION
-        # =========================================================
+        st.metric("🏅 Best POD", best_pod_export)
+
     st.divider()
-        
-    st.subheader("⬇️ Export Master View")
-        
-        export_html = """
-        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-        
-        <script>
-        
-        function getMainContainer() {
-            return window.parent.document.querySelector('.main');
-        }
-        
-        async function ensureLibraries() {
-        
-            if (!window.parent.html2canvas) {
-        
-                await new Promise((resolve) => {
-        
-                    const script = window.parent.document.createElement('script');
-        
-                    script.src =
-                        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-        
-                    script.onload = resolve;
-        
-                    window.parent.document.body.appendChild(script);
-                });
+
+    # =====================================================
+    # TABLE + TREND
+    # =====================================================
+    left_export, right_export = st.columns([1.5, 1])
+
+    with left_export:
+        st.subheader("🧩 POD Performance")
+
+        export_pod_table = pod_master.rename(
+            columns={
+                "PODS": "POD",
+                "Sev2_Received": "Sev-2 Received",
+                "Sev3_Received": "Sev-3 Received",
             }
-        }
-        
-        async function captureElementRegion(element, startY, endY) {
-        
-            const fullCanvas = await window.parent.html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: "#0e1117",
-                allowTaint: true,
-                scrollX: 0,
-                scrollY: -window.parent.scrollY,
-                windowWidth: element.scrollWidth,
-                windowHeight: element.scrollHeight
-            });
-        
-            const croppedCanvas = document.createElement('canvas');
-        
-            croppedCanvas.width = fullCanvas.width;
-            croppedCanvas.height = endY - startY;
-        
-            const ctx = croppedCanvas.getContext('2d');
-        
-            ctx.drawImage(
-                fullCanvas,
-                0,
-                startY * 2,
-                fullCanvas.width,
-                (endY - startY) * 2,
-                0,
-                0,
-                fullCanvas.width,
-                (endY - startY) * 2
-            );
-        
-            return croppedCanvas;
-        }
-        
-        async function exportMasterPNG() {
-        
-            await ensureLibraries();
-        
-            const doc = window.parent.document;
-            const main = getMainContainer();
-        
-            // OPEN EXPANDER
-            const allNodes = [...doc.querySelectorAll("*")];
-        
-            const expanderNode = allNodes.find(el =>
-                el.innerText &&
-                el.innerText.includes("Landscape Export View for PNG")
-            );
-        
-            if (expanderNode) {
-        
-                const button =
-                    expanderNode.closest("button") ||
-                    expanderNode.querySelector("button") ||
-                    expanderNode;
-        
-                if (
-                    button.getAttribute("aria-expanded") === "false"
-                ) {
-                    button.click();
-        
-                    await new Promise(r => setTimeout(r, 1800));
-                }
+        )[
+            [
+                "POD",
+                "Total Issues",
+                "Sev-2 Received",
+                "Sev-3 Received",
+                "L1 Resolved",
+                "L1 Resolved %",
+                "Moved to L2",
+                "Moved to L2 %",
+            ]
+        ].copy()
+
+        styled_export_pod_table = export_pod_table.style.format(
+            {
+                "L1 Resolved %": "{:.1f}%",
+                "Moved to L2 %": "{:.1f}%",
             }
-        
-            const startMarker =
-                doc.getElementById("landscape-export-start");
-        
-            const endMarker =
-                doc.getElementById("landscape-export-end");
-        
-            if (!startMarker || !endMarker) {
-        
-                alert("Could not find Landscape Export markers.");
-        
+        )
+
+        st.dataframe(
+            styled_export_pod_table,
+            use_container_width=True,
+            hide_index=True,
+            height=320,
+        )
+
+    with right_export:
+        st.subheader("📈 Trend View")
+
+        trend_chart_export = (
+            alt.Chart(pod_master)
+            .mark_bar()
+            .encode(
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                x=alt.X(
+                    "L1 Resolved %:Q",
+                    scale=alt.Scale(domain=[0, 100]),
+                    title="L1 %",
+                ),
+                tooltip=[
+                    "PODS",
+                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                ],
+            )
+            .properties(height=280)
+        )
+
+        st.altair_chart(trend_chart_export, use_container_width=True)
+
+    # =====================================================
+    # POD RANKING + PEOPLE TABLE
+    # =====================================================
+    left_bottom, right_bottom = st.columns([1, 1])
+
+    with left_bottom:
+        st.subheader("🏆 POD Resolve Ranking")
+
+        ranking_chart = (
+            alt.Chart(
+                pod_master.sort_values("L1 Resolved %", ascending=False)
+            )
+            .mark_bar()
+            .encode(
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                x=alt.X(
+                    "L1 Resolved %:Q",
+                    scale=alt.Scale(domain=[0, 100]),
+                    title="L1 Resolved %",
+                ),
+                tooltip=[
+                    "PODS",
+                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                ],
+            )
+            .properties(height=260)
+        )
+
+        st.altair_chart(ranking_chart, use_container_width=True)
+
+    with right_bottom:
+        st.subheader("👥 People Performance")
+
+        try:
+            people_raw_export = load_perf_csv(PERF_PEOPLE_FILE, f"Upload {PERF_PEOPLE_FILE}")
+            people_all_export = normalize_people_perf(people_raw_export)
+            people_year_export = people_all_export[
+                people_all_export["Year"] == selected_year
+            ].copy()
+
+            if master_month_filter != "All":
+                people_year_export = people_year_export[
+                    people_year_export["Month"].astype(str) == master_month_filter
+                ]
+
+            if people_year_export.empty:
+                st.info("No people performance rows for selected filter.")
+            else:
+                export_people = (
+                    people_year_export.groupby("Name", as_index=False)[
+                        ["Sev2_Contributed", "Sev3_Resolved_RCA"]
+                    ]
+                    .sum()
+                )
+
+                export_people["Total"] = (
+                    export_people["Sev2_Contributed"]
+                    + export_people["Sev3_Resolved_RCA"]
+                )
+
+                export_people = export_people.sort_values(
+                    "Total",
+                    ascending=False,
+                ).head(6)
+
+                export_people = export_people.rename(
+                    columns={
+                        "Name": "Person",
+                        "Sev2_Contributed": "Sev-2",
+                        "Sev3_Resolved_RCA": "Sev-3",
+                    }
+                )
+
+                st.dataframe(
+                    export_people[["Person", "Sev-2", "Sev-3", "Total"]],
+                    use_container_width=True,
+                    hide_index=True,
+                    height=260,
+                )
+
+        except Exception:
+            st.info("People performance table could not be loaded.")
+
+    # ---------- END MARKER ----------
+    st.markdown(
+        '<div id="landscape-export-end"></div>',
+        unsafe_allow_html=True,
+    )
+
+
+# =========================================================
+# EXPORT SECTION
+# =========================================================
+st.divider()
+st.subheader("⬇️ Export Master View")
+
+components.html(
+    """
+    <div style="display:flex; gap:10px;">
+        <button onclick="exportMasterPNG()" style="
+            padding:10px 16px;
+            border-radius:8px;
+            border:1px solid #888;
+            cursor:pointer;
+            font-weight:700;
+            background:#111827;
+            color:white;
+        ">⬇️ Export PNG</button>
+
+        <button onclick="exportMasterPDF()" style="
+            padding:10px 16px;
+            border-radius:8px;
+            border:1px solid #888;
+            cursor:pointer;
+            font-weight:700;
+            background:#111827;
+            color:white;
+        ">⬇️ Export PDF</button>
+    </div>
+
+    <script>
+    async function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            if ([...window.parent.document.scripts].some(s => s.src === src)) {
+                resolve();
                 return;
             }
-        
-            const mainRect = main.getBoundingClientRect();
-        
-            const startRect = startMarker.getBoundingClientRect();
-        
-            const endRect = endMarker.getBoundingClientRect();
-        
-            const startY =
-                Math.max(0, startRect.top - mainRect.top - 10);
-        
-            const endY =
-                Math.max(
-                    startY + 400,
-                    endRect.bottom - mainRect.top + 10
-                );
-        
-            const canvas =
-                await captureElementRegion(
-                    main,
-                    startY,
-                    endY
-                );
-        
-            const link =
-                window.parent.document.createElement("a");
-        
-            link.download =
-                "l1_ops_master_view_landscape.png";
-        
-            link.href =
-                canvas.toDataURL("image/png");
-        
-            link.click();
+
+            const script = window.parent.document.createElement("script");
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            window.parent.document.head.appendChild(script);
+        });
+    }
+
+    async function ensureLibraries() {
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    }
+
+    function getMainContainer() {
+        const doc = window.parent.document;
+
+        return (
+            doc.querySelector('[data-testid="stMainBlockContainer"]') ||
+            doc.querySelector('[data-testid="stAppViewContainer"]') ||
+            doc.querySelector('.main') ||
+            doc.body
+        );
+    }
+
+    async function captureElementRegion(element, startY, endY) {
+        const oldScroll = window.parent.scrollY;
+        window.parent.scrollTo(0, 0);
+
+        await new Promise(r => setTimeout(r, 800));
+
+        const fullCanvas = await window.parent.html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#0e1117",
+            width: element.scrollWidth,
+            height: element.scrollHeight,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight,
+            scrollX: 0,
+            scrollY: 0
+        });
+
+        window.parent.scrollTo(0, oldScroll);
+
+        const scale = 2;
+        const cropY = Math.max(0, startY * scale);
+        const cropHeight = Math.min(
+            (endY - startY) * scale,
+            fullCanvas.height - cropY
+        );
+
+        const cropCanvas = window.parent.document.createElement("canvas");
+        cropCanvas.width = fullCanvas.width;
+        cropCanvas.height = cropHeight;
+
+        const ctx = cropCanvas.getContext("2d");
+
+        ctx.drawImage(
+            fullCanvas,
+            0,
+            cropY,
+            fullCanvas.width,
+            cropHeight,
+            0,
+            0,
+            fullCanvas.width,
+            cropHeight
+        );
+
+        return cropCanvas;
+    }
+
+    async function exportMasterPNG() {
+        await ensureLibraries();
+
+        const doc = window.parent.document;
+        const main = getMainContainer();
+
+        // Open the landscape expander first
+        const allNodes = [...doc.querySelectorAll("*")];
+
+        const expanderNode = allNodes.find(el =>
+            el.innerText &&
+            el.innerText.includes("Landscape Export View for PNG")
+        );
+
+        if (expanderNode) {
+            const clickable =
+                expanderNode.closest("button") ||
+                expanderNode.querySelector("button") ||
+                expanderNode;
+
+            const ariaExpanded = clickable.getAttribute("aria-expanded");
+
+            if (ariaExpanded === "false") {
+                clickable.click();
+                await new Promise(r => setTimeout(r, 1800));
+            }
         }
-        
-        function exportMasterPDF() {
-        
-            window.print();
+
+        const startMarker = doc.getElementById("landscape-export-start");
+        const endMarker = doc.getElementById("landscape-export-end");
+
+        if (!startMarker || !endMarker) {
+            alert("Could not find Landscape Export markers.");
+            return;
         }
-        
-        window.exportMasterPNG = exportMasterPNG;
-        window.exportMasterPDF = exportMasterPDF;
-        
-        </script>
-        """
-        
-        st.components.v1.html(
-            export_html,
-            height=0
-        )
-        
-        exp1, exp2 = st.columns([1, 1])
-        
-        with exp1:
-        
-            st.markdown(
-                """
-                <button onclick="window.exportMasterPNG()"
-                    style="
-                        width:100%;
-                        background:#1f2937;
-                        color:white;
-                        border:none;
-                        border-radius:10px;
-                        padding:14px;
-                        font-size:16px;
-                        font-weight:700;
-                        cursor:pointer;
-                    ">
-                    📥 Export PNG
-                </button>
-                """,
-                unsafe_allow_html=True,
-            )
-        
-        with exp2:
-        
-            st.markdown(
-                """
-                <button onclick="window.exportMasterPDF()"
-                    style="
-                        width:100%;
-                        background:#1f2937;
-                        color:white;
-                        border:none;
-                        border-radius:10px;
-                        padding:14px;
-                        font-size:16px;
-                        font-weight:700;
-                        cursor:pointer;
-                    ">
-                    📄 Export PDF
-                </button>
-                """,
-                unsafe_allow_html=True,
-            )
+
+        const mainRect = main.getBoundingClientRect();
+        const startRect = startMarker.getBoundingClientRect();
+        const endRect = endMarker.getBoundingClientRect();
+
+        const startY = Math.max(0, startRect.top - mainRect.top - 10);
+        const endY = Math.max(startY + 400, endRect.bottom - mainRect.top + 10);
+
+        const canvas = await captureElementRegion(main, startY, endY);
+
+        const link = window.parent.document.createElement("a");
+        link.download = "l1_ops_master_view_landscape.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    function findHeadingByText(textOptions) {
+        const doc = window.parent.document;
+        const headings = [...doc.querySelectorAll("h1, h2, h3")];
+
+        return headings.find(el =>
+            el.innerText &&
+            textOptions.some(t => el.innerText.includes(t))
+        );
+    }
+
+    async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
+        const doc = window.parent.document;
+        const main = getMainContainer();
+
+        const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
+
+        const startHeading = allHeadings.find(el =>
+            el.innerText &&
+            headingTexts.some(t => el.innerText.includes(t))
+        );
+
+        if (!startHeading) return null;
+
+        let endHeading = null;
+
+        for (const h of allHeadings) {
+            if (!h.innerText) continue;
+
+            const isAfter =
+                h.getBoundingClientRect().top >
+                startHeading.getBoundingClientRect().top;
+
+            const matchesNext =
+                nextHeadingTexts.some(t => h.innerText.includes(t));
+
+            if (isAfter && matchesNext) {
+                endHeading = h;
+                break;
+            }
+        }
+
+        const mainRect = main.getBoundingClientRect();
+        const startRect = startHeading.getBoundingClientRect();
+
+        const startY = Math.max(0, startRect.top - mainRect.top - 18);
+
+        let endY;
+
+        if (endHeading) {
+            endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
+        } else {
+            const exportHeading = allHeadings.find(el =>
+                el.innerText && el.innerText.includes("Export Master View")
+            );
+
+            endY = exportHeading
+                ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
+                : main.scrollHeight;
+        }
+
+        return await captureElementRegion(main, startY, endY);
+    }
+
+    async function addCanvasAsPDFPage(pdf, canvas) {
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const margin = 24;
+        const maxWidth = pageWidth - (margin * 2);
+        const maxHeight = pageHeight - (margin * 2);
+
+        const ratio = Math.min(
+            maxWidth / canvas.width,
+            maxHeight / canvas.height
+        );
+
+        const imgWidth = canvas.width * ratio;
+        const imgHeight = canvas.height * ratio;
+
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+
+        pdf.addImage(
+            canvas.toDataURL("image/png"),
+            "PNG",
+            x,
+            y,
+            imgWidth,
+            imgHeight
+        );
+    }
+
+    async function exportMasterPDF() {
+        await ensureLibraries();
+
+        const { jsPDF } = window.parent.jspdf;
+        const pdf = new jsPDF("landscape", "pt", "a4");
+
+        const sections = [
+            {
+                title: [
+                    "L1 Ops Master Performance View",
+                    "L1 Ops Master Performance Review"
+                ],
+                next: [
+                    "POD Performance Command Center",
+                    "Leadership Trend View",
+                    "Compact Summary",
+                    "Landscape Export View for PNG",
+                    "Export Master View"
+                ]
+            },
+            {
+                title: ["POD Performance Command Center"],
+                next: [
+                    "Leadership Trend View",
+                    "Compact Summary",
+                    "Landscape Export View for PNG",
+                    "Export Master View"
+                ]
+            },
+            {
+                title: [
+                    "Leadership Trend View",
+                    "Trend & POD Comparison"
+                ],
+                next: [
+                    "Compact Summary",
+                    "Landscape Export View for PNG",
+                    "Export Master View"
+                ]
+            },
+            {
+                title: [
+                    "Compact Summary",
+                    "Summary Tables"
+                ],
+                next: [
+                    "Landscape Export View for PNG",
+                    "Export Master View"
+                ]
+            }
+        ];
+
+        let added = 0;
+
+        for (const section of sections) {
+            const canvas = await captureSectionByHeading(section.title, section.next);
+
+            if (canvas && canvas.height > 50) {
+                if (added > 0) pdf.addPage();
+                await addCanvasAsPDFPage(pdf, canvas);
+                added += 1;
+            }
+        }
+
+        if (added === 0) {
+            alert("No sections found to export.");
+            return;
+        }
+
+        pdf.save("l1_ops_master_view_sectioned.pdf");
+    }
+    </script>
+    """,
+    height=70,
+)
