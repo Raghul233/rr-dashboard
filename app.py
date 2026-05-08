@@ -1797,53 +1797,82 @@ components.html(
     // ------------------------------------
     async function exportMasterPNG() {
 
-        await ensureLibraries();
+    await ensureLibraries();
 
-        const doc = window.parent.document;
-        const main = getMainContainer();
+    const doc = window.parent.document;
+    const main = getMainContainer();
 
-        const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
+    // Find the expander/header text
+    const allNodes = [...doc.querySelectorAll("*")];
 
-        const landscapeHeading = allHeadings.find(el =>
-            el.innerText &&
-            el.innerText.includes("Landscape Export View")
-        );
+    const expanderTextNode = allNodes.find(el =>
+        el.innerText &&
+        el.innerText.trim().includes("Landscape Export View for PNG")
+    );
 
-        const exportHeading = allHeadings.find(el =>
-            el.innerText &&
-            el.innerText.includes("Export Master View")
-        );
-
-        if (!landscapeHeading) {
-            alert("Could not find Landscape Export View section.");
-            return;
-        }
-
-        const mainRect = main.getBoundingClientRect();
-        const startRect = landscapeHeading.getBoundingClientRect();
-
-        const startY = Math.max(
-            0,
-            startRect.top - mainRect.top - 15
-        );
-
-        const endY = exportHeading
-            ? exportHeading.getBoundingClientRect().top - mainRect.top - 25
-            : main.scrollHeight;
-
-        const canvas = await captureElementRegion(
-            main,
-            startY,
-            endY
-        );
-
-        const link = window.parent.document.createElement("a");
-
-        link.download = "l1_ops_master_view_landscape.png";
-        link.href = canvas.toDataURL("image/png");
-
-        link.click();
+    if (!expanderTextNode) {
+        alert("Could not find Landscape Export View for PNG expander.");
+        return;
     }
+
+    // Open expander if collapsed
+    const clickableExpander =
+        expanderTextNode.closest("details") ||
+        expanderTextNode.closest("button") ||
+        expanderTextNode.closest('[data-testid="stExpander"]');
+
+    const alreadyOpen =
+        expanderTextNode.getAttribute("aria-expanded") === "true" ||
+        (clickableExpander && clickableExpander.open === true);
+
+    if (!alreadyOpen) {
+        expanderTextNode.click();
+        await new Promise(r => setTimeout(r, 1500));
+    }
+
+    // Re-query after opening
+    const headings = [...doc.querySelectorAll("h1, h2, h3")];
+
+    const landscapeHeading = headings.find(el =>
+        el.innerText &&
+        el.innerText.includes("L1 Ops Master Performance View")
+    );
+
+    const exportHeading = headings.find(el =>
+        el.innerText &&
+        el.innerText.includes("Export Master View")
+    );
+
+    if (!landscapeHeading) {
+        alert("Could not find L1 Ops Master Performance View inside Landscape Export section.");
+        return;
+    }
+
+    const mainRect = main.getBoundingClientRect();
+    const startRect = landscapeHeading.getBoundingClientRect();
+
+    const startY = Math.max(
+        0,
+        startRect.top - mainRect.top - 15
+    );
+
+    const endY = exportHeading
+        ? exportHeading.getBoundingClientRect().top - mainRect.top - 25
+        : main.scrollHeight;
+
+    const canvas = await captureElementRegion(
+        main,
+        startY,
+        endY
+    );
+
+    const link = window.parent.document.createElement("a");
+
+    link.download = "l1_ops_master_view_landscape.png";
+    link.href = canvas.toDataURL("image/png");
+
+    link.click();
+}
 
     // ------------------------------------
     // SECTION CAPTURE FOR PDF
