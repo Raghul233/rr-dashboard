@@ -1630,211 +1630,211 @@ with tab4:
             '<div id="landscape-export-end"></div>',
             unsafe_allow_html=True,
         )
-# =========================================================
-# EXPORT SECTION
-# =========================================================
-st.divider()
-
-st.subheader("⬇️ Export Master View")
-
-export_html = """
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-<script>
-
-function getMainContainer() {
-    return window.parent.document.querySelector('.main');
-}
-
-async function ensureLibraries() {
-
-    if (!window.parent.html2canvas) {
-
-        await new Promise((resolve) => {
-
-            const script = window.parent.document.createElement('script');
-
-            script.src =
-                'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-
-            script.onload = resolve;
-
-            window.parent.document.body.appendChild(script);
-        });
-    }
-}
-
-async function captureElementRegion(element, startY, endY) {
-
-    const fullCanvas = await window.parent.html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#0e1117",
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: -window.parent.scrollY,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight
-    });
-
-    const croppedCanvas = document.createElement('canvas');
-
-    croppedCanvas.width = fullCanvas.width;
-    croppedCanvas.height = endY - startY;
-
-    const ctx = croppedCanvas.getContext('2d');
-
-    ctx.drawImage(
-        fullCanvas,
-        0,
-        startY * 2,
-        fullCanvas.width,
-        (endY - startY) * 2,
-        0,
-        0,
-        fullCanvas.width,
-        (endY - startY) * 2
-    );
-
-    return croppedCanvas;
-}
-
-async function exportMasterPNG() {
-
-    await ensureLibraries();
-
-    const doc = window.parent.document;
-    const main = getMainContainer();
-
-    // OPEN EXPANDER
-    const allNodes = [...doc.querySelectorAll("*")];
-
-    const expanderNode = allNodes.find(el =>
-        el.innerText &&
-        el.innerText.includes("Landscape Export View for PNG")
-    );
-
-    if (expanderNode) {
-
-        const button =
-            expanderNode.closest("button") ||
-            expanderNode.querySelector("button") ||
-            expanderNode;
-
-        if (
-            button.getAttribute("aria-expanded") === "false"
-        ) {
-            button.click();
-
-            await new Promise(r => setTimeout(r, 1800));
+        # =========================================================
+        # EXPORT SECTION
+        # =========================================================
+        st.divider()
+        
+        st.subheader("⬇️ Export Master View")
+        
+        export_html = """
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+        
+        <script>
+        
+        function getMainContainer() {
+            return window.parent.document.querySelector('.main');
         }
-    }
-
-    const startMarker =
-        doc.getElementById("landscape-export-start");
-
-    const endMarker =
-        doc.getElementById("landscape-export-end");
-
-    if (!startMarker || !endMarker) {
-
-        alert("Could not find Landscape Export markers.");
-
-        return;
-    }
-
-    const mainRect = main.getBoundingClientRect();
-
-    const startRect = startMarker.getBoundingClientRect();
-
-    const endRect = endMarker.getBoundingClientRect();
-
-    const startY =
-        Math.max(0, startRect.top - mainRect.top - 10);
-
-    const endY =
-        Math.max(
-            startY + 400,
-            endRect.bottom - mainRect.top + 10
-        );
-
-    const canvas =
-        await captureElementRegion(
-            main,
-            startY,
-            endY
-        );
-
-    const link =
-        window.parent.document.createElement("a");
-
-    link.download =
-        "l1_ops_master_view_landscape.png";
-
-    link.href =
-        canvas.toDataURL("image/png");
-
-    link.click();
-}
-
-function exportMasterPDF() {
-
-    window.print();
-}
-
-window.exportMasterPNG = exportMasterPNG;
-window.exportMasterPDF = exportMasterPDF;
-
-</script>
-"""
-
-st.components.v1.html(
-    export_html,
-    height=0
-)
-
-exp1, exp2 = st.columns([1, 1])
-
-with exp1:
-
-    st.markdown(
+        
+        async function ensureLibraries() {
+        
+            if (!window.parent.html2canvas) {
+        
+                await new Promise((resolve) => {
+        
+                    const script = window.parent.document.createElement('script');
+        
+                    script.src =
+                        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        
+                    script.onload = resolve;
+        
+                    window.parent.document.body.appendChild(script);
+                });
+            }
+        }
+        
+        async function captureElementRegion(element, startY, endY) {
+        
+            const fullCanvas = await window.parent.html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#0e1117",
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: -window.parent.scrollY,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight
+            });
+        
+            const croppedCanvas = document.createElement('canvas');
+        
+            croppedCanvas.width = fullCanvas.width;
+            croppedCanvas.height = endY - startY;
+        
+            const ctx = croppedCanvas.getContext('2d');
+        
+            ctx.drawImage(
+                fullCanvas,
+                0,
+                startY * 2,
+                fullCanvas.width,
+                (endY - startY) * 2,
+                0,
+                0,
+                fullCanvas.width,
+                (endY - startY) * 2
+            );
+        
+            return croppedCanvas;
+        }
+        
+        async function exportMasterPNG() {
+        
+            await ensureLibraries();
+        
+            const doc = window.parent.document;
+            const main = getMainContainer();
+        
+            // OPEN EXPANDER
+            const allNodes = [...doc.querySelectorAll("*")];
+        
+            const expanderNode = allNodes.find(el =>
+                el.innerText &&
+                el.innerText.includes("Landscape Export View for PNG")
+            );
+        
+            if (expanderNode) {
+        
+                const button =
+                    expanderNode.closest("button") ||
+                    expanderNode.querySelector("button") ||
+                    expanderNode;
+        
+                if (
+                    button.getAttribute("aria-expanded") === "false"
+                ) {
+                    button.click();
+        
+                    await new Promise(r => setTimeout(r, 1800));
+                }
+            }
+        
+            const startMarker =
+                doc.getElementById("landscape-export-start");
+        
+            const endMarker =
+                doc.getElementById("landscape-export-end");
+        
+            if (!startMarker || !endMarker) {
+        
+                alert("Could not find Landscape Export markers.");
+        
+                return;
+            }
+        
+            const mainRect = main.getBoundingClientRect();
+        
+            const startRect = startMarker.getBoundingClientRect();
+        
+            const endRect = endMarker.getBoundingClientRect();
+        
+            const startY =
+                Math.max(0, startRect.top - mainRect.top - 10);
+        
+            const endY =
+                Math.max(
+                    startY + 400,
+                    endRect.bottom - mainRect.top + 10
+                );
+        
+            const canvas =
+                await captureElementRegion(
+                    main,
+                    startY,
+                    endY
+                );
+        
+            const link =
+                window.parent.document.createElement("a");
+        
+            link.download =
+                "l1_ops_master_view_landscape.png";
+        
+            link.href =
+                canvas.toDataURL("image/png");
+        
+            link.click();
+        }
+        
+        function exportMasterPDF() {
+        
+            window.print();
+        }
+        
+        window.exportMasterPNG = exportMasterPNG;
+        window.exportMasterPDF = exportMasterPDF;
+        
+        </script>
         """
-        <button onclick="window.exportMasterPNG()"
-            style="
-                width:100%;
-                background:#1f2937;
-                color:white;
-                border:none;
-                border-radius:10px;
-                padding:14px;
-                font-size:16px;
-                font-weight:700;
-                cursor:pointer;
-            ">
-            📥 Export PNG
-        </button>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with exp2:
-
-    st.markdown(
-        """
-        <button onclick="window.exportMasterPDF()"
-            style="
-                width:100%;
-                background:#1f2937;
-                color:white;
-                border:none;
-                border-radius:10px;
-                padding:14px;
-                font-size:16px;
-                font-weight:700;
-                cursor:pointer;
-            ">
-            📄 Export PDF
-        </button>
-        """,
-        unsafe_allow_html=True,
-    )
+        
+        st.components.v1.html(
+            export_html,
+            height=0
+        )
+        
+        exp1, exp2 = st.columns([1, 1])
+        
+        with exp1:
+        
+            st.markdown(
+                """
+                <button onclick="window.exportMasterPNG()"
+                    style="
+                        width:100%;
+                        background:#1f2937;
+                        color:white;
+                        border:none;
+                        border-radius:10px;
+                        padding:14px;
+                        font-size:16px;
+                        font-weight:700;
+                        cursor:pointer;
+                    ">
+                    📥 Export PNG
+                </button>
+                """,
+                unsafe_allow_html=True,
+            )
+        
+        with exp2:
+        
+            st.markdown(
+                """
+                <button onclick="window.exportMasterPDF()"
+                    style="
+                        width:100%;
+                        background:#1f2937;
+                        color:white;
+                        border:none;
+                        border-radius:10px;
+                        padding:14px;
+                        font-size:16px;
+                        font-weight:700;
+                        cursor:pointer;
+                    ">
+                    📄 Export PDF
+                </button>
+                """,
+                unsafe_allow_html=True,
+            )
