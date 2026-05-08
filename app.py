@@ -183,7 +183,7 @@ selected_year = st.selectbox("📅 Select Year", years, index=len(years) - 1)
 dfy = df[df["Year"] == selected_year].copy()
 
 # ---------- Tabs (Leaderboard first) ----------
-tab1, tab2, tab3 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Performance"])
+tab1, tab2, tab3 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Performance", "🏆 Performance 1"])
 
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
@@ -860,7 +860,462 @@ with tab3:
     )
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
+    
+# ---------- Tab 4: Performance 1 ----------
+with tab4:
+    import altair as alt
 
+    st.subheader(f"🏆 L1 Ops Performance Master Dashboard — {selected_year}")
+    st.caption(
+        "High-level view of L1 Ops performance by POD, Severity, L1 Resolution %, and Moved to L2 %."
+    )
+
+    # -------------------------------
+    # Helpers for Performance 1 only
+    # -------------------------------
+    def _p1_to_num(s):
+        return pd.to_numeric(s, errors="coerce").fillna(0)
+
+    def _p1_safe_pct(numer, denom):
+        denom = denom.replace({0: pd.NA})
+        return (numer / denom).fillna(0) * 100
+
+    def _p1_metric_card(title, value, subtitle="", emoji=""):
+        st.markdown(
+            f"""
+            <div style="
+                border:1px solid rgba(255,255,255,0.12);
+                border-radius:14px;
+                padding:18px 18px;
+                background:rgba(255,255,255,0.035);
+                min-height:125px;
+            ">
+                <div style="font-size:15px; color:#AEB6C2; font-weight:700;">
+                    {emoji} {title}
+                </div>
+                <div style="font-size:38px; font-weight:900; color:white; margin-top:8px;">
+                    {value}
+                </div>
+                <div style="font-size:14px; color:#AEB6C2; margin-top:4px;">
+                    {subtitle}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    def _p1_normalize_pod_perf(df_in: pd.DataFrame) -> pd.DataFrame:
+        dfp = df_in.copy()
+        dfp.columns = [c.strip() for c in dfp.columns]
+
+        colmap = {}
+        for c in dfp.columns:
+            cl = c.strip().lower()
+
+            if cl == "year":
+                colmap[c] = "Year"
+            elif cl == "quarter":
+                colmap[c] = "Quarter"
+            elif cl == "month":
+                colmap[c] = "Month"
+            elif cl in ["pod", "pods"]:
+                colmap[c] = "PODS"
+            elif cl in ["sev 2 received", "sev2 received", "sev2_received"]:
+                colmap[c] = "Sev2_Received"
+            elif cl in ["sev 2 contributed", "sev2 contributed", "sev2_contributed"]:
+                colmap[c] = "Sev2_Contributed"
+            elif cl in ["sev 3 received", "sev3 received", "sev3_received"]:
+                colmap[c] = "Sev3_Received"
+            elif cl in [
+                "sev 3 resolved / rca",
+                "sev3 resolved / rca",
+                "sev3_resolved_rca",
+                "sev 3 resolved",
+                "sev3 resolved",
+            ]:
+                colmap[c] = "Sev3_Resolved_RCA"
+
+        dfp = dfp.rename(columns=colmap)
+
+        required = [
+            "Year", "Quarter", "Month", "PODS",
+            "Sev2_Received", "Sev2_Contributed",
+            "Sev3_Received", "Sev3_Resolved_RCA",
+        ]
+
+        missing = [c for c in required if c not in dfp.columns]
+        if missing:
+            st.error(f"performance_pod.csv is missing columns: {missing}")
+            st.stop()
+
+        dfp["Year"] = pd.to_numeric(dfp["Year"], errors="coerce").astype("Int64")
+        dfp["Quarter"] = dfp["Quarter"].astype(str).str.strip().str.upper()
+        dfp["Month"] = dfp["Month"].astype(str).str.strip().str.upper()
+        dfp["PODS"] = dfp["PODS"].astype(str).str.strip().str.upper()
+
+        for c in ["Sev2_Received", "Sev2_Contributed", "Sev3_Received", "Sev3_Resolved_RCA"]:
+            dfp[c] = _p1_to_num(dfp[c]).astype(int)
+
+        dfp["Quarter"] = dfp["Month"].map(MONTH_TO_QUARTER).fillna(dfp["Quarter"])
+
+        dfp["Total Issues"] = dfp["Sev2_Received"] + dfp["Sev3_Received"]
+        dfp["L1 Resolved"] = dfp["Sev2_Contributed"] + dfp["Sev3_Resolved_RCA"]
+        dfp["Moved to L2"] = (dfp["Total Issues"] - dfp["L1 Resolved"]).clip(lower=0)
+
+        dfp["L1 Resolved %"] = _p1_safe_pct(dfp["L1 Resolved"], dfp["Total Issues"]).round(1)
+        dfp["Moved to L2 %"] = _p1_safe_pct(dfp["Moved to L2"], dfp["Total Issues"]).round(1)
+        dfp["Sev 2 %"] = _p1_safe_pct(dfp["Sev2_Received"], dfp["Total Issues"]).round(1)
+        dfp["Sev 3 %"] = _p1_safe_pct(dfp["Sev3_Received"], dfp["Total Issues"]).round(1)
+
+        dfp["Month"] = pd.Categorical(dfp["Month"], categories=MONTH_ORDER, ordered=True)
+        dfp = dfp.sort_values(["Quarter", "Month", "PODS"]).reset_index(drop=True)
+
+        return dfp
+
+    # -------------------------------
+    # Load POD performance CSV
+    # -------------------------------
+    pod_raw_p1 = load_perf_csv(PERF_POD_FILE, f"Upload {PERF_POD_FILE}")
+    pod_all_p1 = _p1_normalize_pod_perf(pod_raw_p1)
+
+    pod_year_p1 = pod_all_p1[pod_all_p1["Year"] == selected_year].copy()
+
+    if pod_year_p1.empty:
+        st.warning(f"No POD performance rows found for {selected_year}.")
+        st.stop()
+
+    # -------------------------------
+    # Performance 1 filters
+    # -------------------------------
+    available_months_p1 = [
+        m for m in MONTH_ORDER
+        if m in pod_year_p1["Month"].astype(str).unique().tolist()
+    ]
+
+    filter_box = st.container(border=True)
+    with filter_box:
+        c1, c2 = st.columns([1, 1])
+
+        with c1:
+            perf1_month_filter = st.selectbox(
+                "📅 Select Month",
+                ["All"] + available_months_p1,
+                index=0,
+                key="perf1_month_filter",
+            )
+
+        with c2:
+            available_pods_p1 = sorted(pod_year_p1["PODS"].dropna().astype(str).unique().tolist())
+            perf1_pod_filter = st.multiselect(
+                "🧩 Select POD(s)",
+                available_pods_p1,
+                default=available_pods_p1,
+                key="perf1_pod_filter",
+            )
+
+    pod_view_p1 = pod_year_p1.copy()
+
+    if perf1_month_filter != "All":
+        pod_view_p1 = pod_view_p1[pod_view_p1["Month"].astype(str) == perf1_month_filter]
+
+    if perf1_pod_filter:
+        pod_view_p1 = pod_view_p1[pod_view_p1["PODS"].isin(perf1_pod_filter)]
+
+    if pod_view_p1.empty:
+        st.info("No data available for the selected filters.")
+        st.stop()
+
+    # -------------------------------
+    # Executive Summary
+    # -------------------------------
+    st.markdown("### 📌 Executive Summary")
+
+    total_issues = int(pod_view_p1["Total Issues"].sum())
+    sev2_total = int(pod_view_p1["Sev2_Received"].sum())
+    sev3_total = int(pod_view_p1["Sev3_Received"].sum())
+    l1_resolved_total = int(pod_view_p1["L1 Resolved"].sum())
+    moved_l2_total = int(pod_view_p1["Moved to L2"].sum())
+
+    l1_resolved_pct = round((l1_resolved_total / total_issues * 100), 1) if total_issues else 0
+    moved_l2_pct = round((moved_l2_total / total_issues * 100), 1) if total_issues else 0
+
+    pod_summary_for_best = (
+        pod_view_p1.groupby("PODS", as_index=False)[["Total Issues", "L1 Resolved", "Moved to L2"]]
+        .sum()
+    )
+    pod_summary_for_best["L1 Resolved %"] = _p1_safe_pct(
+        pod_summary_for_best["L1 Resolved"],
+        pod_summary_for_best["Total Issues"]
+    ).round(1)
+
+    best_pod = (
+        pod_summary_for_best.sort_values(["L1 Resolved %", "Total Issues"], ascending=[False, False])
+        .iloc[0]["PODS"]
+    )
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+
+    with k1:
+        _p1_metric_card("Total Issues", f"{total_issues}", "Sev 2 + Sev 3", "🚨")
+
+    with k2:
+        _p1_metric_card("L1 Resolved", f"{l1_resolved_total}", f"{l1_resolved_pct}% resolved at L1", "✅")
+
+    with k3:
+        _p1_metric_card("Moved to L2", f"{moved_l2_total}", f"{moved_l2_pct}% escalated", "⬆️")
+
+    with k4:
+        _p1_metric_card("Severity Split", f"{sev2_total} / {sev3_total}", "Sev 2 / Sev 3", "📊")
+
+    with k5:
+        _p1_metric_card("Best POD", best_pod, "Highest L1 resolve %", "🥇")
+
+    st.divider()
+
+    # -------------------------------
+    # POD Performance Cards
+    # -------------------------------
+    st.markdown("### 🧩 POD Performance Snapshot")
+
+    pod_cards = (
+        pod_view_p1.groupby("PODS", as_index=False)[
+            ["Sev2_Received", "Sev3_Received", "Total Issues", "L1 Resolved", "Moved to L2"]
+        ]
+        .sum()
+    )
+
+    pod_cards["L1 Resolved %"] = _p1_safe_pct(pod_cards["L1 Resolved"], pod_cards["Total Issues"]).round(1)
+    pod_cards["Moved to L2 %"] = _p1_safe_pct(pod_cards["Moved to L2"], pod_cards["Total Issues"]).round(1)
+
+    pod_cards = pod_cards.sort_values(["L1 Resolved %", "Total Issues"], ascending=[False, False])
+
+    card_cols = st.columns(3)
+
+    for idx, row in pod_cards.iterrows():
+        with card_cols[idx % 3]:
+            st.markdown(
+                f"""
+                <div style="
+                    border:1px solid rgba(255,255,255,0.12);
+                    border-radius:16px;
+                    padding:18px;
+                    margin-bottom:16px;
+                    background:rgba(255,255,255,0.035);
+                ">
+                    <div style="font-size:22px; font-weight:900; color:white;">
+                        🧩 {row["PODS"]}
+                    </div>
+                    <div style="font-size:13px; color:#AEB6C2; margin-bottom:14px;">
+                        POD performance summary
+                    </div>
+
+                    <div style="font-size:30px; font-weight:900; color:white;">
+                        {int(row["Total Issues"])}
+                    </div>
+                    <div style="font-size:13px; color:#AEB6C2; margin-bottom:10px;">
+                        Total Issues
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span>Sev 2</span><b>{int(row["Sev2_Received"])}</b>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span>Sev 3</span><b>{int(row["Sev3_Received"])}</b>
+                    </div>
+                    <hr style="border-color:rgba(255,255,255,0.10);">
+
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span>✅ L1 Resolved</span><b>{int(row["L1 Resolved"])} ({row["L1 Resolved %"]:.1f}%)</b>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px;">
+                        <span>⬆️ Moved to L2</span><b>{int(row["Moved to L2"])} ({row["Moved to L2 %"]:.1f}%)</b>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.divider()
+
+    # -------------------------------
+    # Charts
+    # -------------------------------
+    if perf1_month_filter == "All":
+        st.markdown("### 📈 Monthly Trend")
+
+        trend = (
+            pod_view_p1.groupby("Month", as_index=False)[
+                ["Total Issues", "L1 Resolved", "Moved to L2", "Sev2_Received", "Sev3_Received"]
+            ]
+            .sum()
+        )
+
+        trend["Month"] = trend["Month"].astype(str)
+        trend["L1 Resolved %"] = _p1_safe_pct(trend["L1 Resolved"], trend["Total Issues"]).round(1)
+        trend["Moved to L2 %"] = _p1_safe_pct(trend["Moved to L2"], trend["Total Issues"]).round(1)
+
+        left_chart, right_chart = st.columns(2)
+
+        with left_chart:
+            st.markdown("**L1 Resolved % Trend**")
+            chart = (
+                alt.Chart(trend)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y("L1 Resolved %:Q", title="L1 Resolved %", scale=alt.Scale(domain=[0, 100])),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+        with right_chart:
+            st.markdown("**Moved to L2 % Trend**")
+            chart = (
+                alt.Chart(trend)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y("Moved to L2 %:Q", title="Moved to L2 %", scale=alt.Scale(domain=[0, 100])),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
+                        alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+    else:
+        st.markdown(f"### 📊 POD Comparison — {perf1_month_filter}")
+
+        pod_compare = pod_cards.copy()
+
+        left_chart, right_chart = st.columns(2)
+
+        with left_chart:
+            st.markdown("**POD-wise L1 Resolved %**")
+            chart = (
+                alt.Chart(pod_compare)
+                .mark_bar()
+                .encode(
+                    x=alt.X("L1 Resolved %:Q", title="L1 Resolved %", scale=alt.Scale(domain=[0, 100])),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+        with right_chart:
+            st.markdown("**POD-wise Moved to L2 %**")
+            chart = (
+                alt.Chart(pod_compare)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Moved to L2 %:Q", title="Moved to L2 %", scale=alt.Scale(domain=[0, 100])),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
+                        alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+    st.divider()
+
+    # -------------------------------
+    # POD Detailed Table
+    # -------------------------------
+    st.markdown("### 🧾 POD Performance — Detailed Table")
+
+    pod_table = pod_view_p1.copy()
+    pod_table["Month"] = pod_table["Month"].astype(str)
+
+    pod_display = pod_table[
+        [
+            "Quarter", "Month", "PODS",
+            "Sev2_Received", "Sev2_Contributed",
+            "Sev3_Received", "Sev3_Resolved_RCA",
+            "Total Issues", "L1 Resolved", "L1 Resolved %",
+            "Moved to L2", "Moved to L2 %",
+        ]
+    ].rename(
+        columns={
+            "PODS": "POD",
+            "Sev2_Received": "Sev-2 Received",
+            "Sev2_Contributed": "Sev-2 L1 Resolved",
+            "Sev3_Received": "Sev-3 Received",
+            "Sev3_Resolved_RCA": "Sev-3 L1 Resolved / RCA",
+        }
+    )
+
+    percent_cols = ["L1 Resolved %", "Moved to L2 %"]
+
+    styled_pod_display = pod_display.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in pod_display.columns}
+    )
+
+    st.dataframe(
+        styled_pod_display,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.divider()
+
+    # -------------------------------
+    # POD Summary Table
+    # -------------------------------
+    st.markdown("### 📌 POD Summary")
+
+    pod_summary = pod_cards.rename(
+        columns={
+            "PODS": "POD",
+            "Sev2_Received": "Sev-2 Received",
+            "Sev3_Received": "Sev-3 Received",
+        }
+    )
+
+    pod_summary = pod_summary[
+        [
+            "POD",
+            "Total Issues",
+            "Sev-2 Received",
+            "Sev-3 Received",
+            "L1 Resolved",
+            "L1 Resolved %",
+            "Moved to L2",
+            "Moved to L2 %",
+        ]
+    ]
+
+    styled_pod_summary = pod_summary.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in pod_summary.columns}
+    )
+
+    st.dataframe(
+        styled_pod_summary,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 
