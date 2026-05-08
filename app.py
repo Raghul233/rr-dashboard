@@ -1108,77 +1108,77 @@ with tab4:
 
     st.divider()
 
-# -------------------------------
-# POD Command Center
-# -------------------------------
-st.markdown("## 🧩 POD Performance Command Center")
-st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
-
-pod_cols = st.columns(5)
-
-for idx, row in pod_master.reset_index(drop=True).iterrows():
-    resolve_pct = float(row["L1 Resolved %"])
-    l2_pct_local = float(row["Moved to L2 %"])
-
-    pod_name = str(row["PODS"])
-
-    with pod_cols[idx % 5]:
-        with st.container(border=True):
-
-            # POD title
-            st.markdown(
-                f"""
-                <div style="
-                    min-height:72px;
-                    font-size:24px;
-                    font-weight:900;
-                    line-height:1.15;
-                    color:white;
-                    margin-bottom:8px;
-                    word-break:normal;
-                    overflow-wrap:break-word;
-                ">
-                    🧩 {pod_name}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.metric("Total Issues", int(row["Total Issues"]))
-
-            sev1, sev2 = st.columns(2)
-            with sev1:
-                st.metric("Sev 2", int(row["Sev2_Received"]))
-            with sev2:
-                st.metric("Sev 3", int(row["Sev3_Received"]))
-
-            st.markdown("**✅ L1 Resolve Rate**")
-            st.progress(min(resolve_pct / 100, 1.0))
-            st.markdown(
-                f"""
-                <div style="font-size:24px;font-weight:900;color:#86efac;">
-                    {resolve_pct:.1f}%
-                </div>
-                <div style="font-size:12px;color:#AEB6C2;margin-bottom:10px;">
-                    {int(row["L1 Resolved"])} resolved within L1
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown("**⬆️ Moved to L2**")
-            st.progress(min(l2_pct_local / 100, 1.0))
-            st.markdown(
-                f"""
-                <div style="font-size:22px;font-weight:900;color:#fbbf24;">
-                    {l2_pct_local:.1f}%
-                </div>
-                <div style="font-size:12px;color:#AEB6C2;">
-                    {int(row["Moved to L2"])} escalated
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    # -------------------------------
+    # POD Command Center
+    # -------------------------------
+    st.markdown("## 🧩 POD Performance Command Center")
+    st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
+    
+    pod_cols = st.columns(5)
+    
+    for idx, row in pod_master.reset_index(drop=True).iterrows():
+        resolve_pct = float(row["L1 Resolved %"])
+        l2_pct_local = float(row["Moved to L2 %"])
+    
+        pod_name = str(row["PODS"])
+    
+        with pod_cols[idx % 5]:
+            with st.container(border=True):
+    
+                # POD title
+                st.markdown(
+                    f"""
+                    <div style="
+                        min-height:72px;
+                        font-size:24px;
+                        font-weight:900;
+                        line-height:1.15;
+                        color:white;
+                        margin-bottom:8px;
+                        word-break:normal;
+                        overflow-wrap:break-word;
+                    ">
+                        🧩 {pod_name}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+    
+                st.metric("Total Issues", int(row["Total Issues"]))
+    
+                sev1, sev2 = st.columns(2)
+                with sev1:
+                    st.metric("Sev 2", int(row["Sev2_Received"]))
+                with sev2:
+                    st.metric("Sev 3", int(row["Sev3_Received"]))
+    
+                st.markdown("**✅ L1 Resolve Rate**")
+                st.progress(min(resolve_pct / 100, 1.0))
+                st.markdown(
+                    f"""
+                    <div style="font-size:24px;font-weight:900;color:#86efac;">
+                        {resolve_pct:.1f}%
+                    </div>
+                    <div style="font-size:12px;color:#AEB6C2;margin-bottom:10px;">
+                        {int(row["L1 Resolved"])} resolved within L1
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+    
+                st.markdown("**⬆️ Moved to L2**")
+                st.progress(min(l2_pct_local / 100, 1.0))
+                st.markdown(
+                    f"""
+                    <div style="font-size:22px;font-weight:900;color:#fbbf24;">
+                        {l2_pct_local:.1f}%
+                    </div>
+                    <div style="font-size:12px;color:#AEB6C2;">
+                        {int(row["Moved to L2"])} escalated
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
     
     # -------------------------------
     # Charts
