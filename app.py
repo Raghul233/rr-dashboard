@@ -1511,14 +1511,14 @@ with tab4:
     st.divider()
 
 # -------------------------------
-# Export buttons - fixed full Tab 5 export
+# Export buttons - capture only Tab 5 dashboard content
 # -------------------------------
 st.markdown("## ⬇️ Export Master View")
 
 components.html(
     """
     <div style="display:flex; gap:10px;">
-        <button onclick="exportPNG()" style="
+        <button onclick="exportMasterPNG()" style="
             padding:10px 16px;
             border-radius:8px;
             border:1px solid #888;
@@ -1528,7 +1528,7 @@ components.html(
             color:white;
         ">⬇️ Export PNG</button>
 
-        <button onclick="exportPDF()" style="
+        <button onclick="exportMasterPDF()" style="
             padding:10px 16px;
             border-radius:8px;
             border:1px solid #888;
@@ -1554,24 +1554,52 @@ components.html(
         });
     }
 
-    async function getCanvas() {
+    function findDashboardHeading(doc) {
+        const headings = [...doc.querySelectorAll("h1, h2, h3")];
+
+        return headings.find(el =>
+            el.innerText &&
+            (
+                el.innerText.includes("L1 Ops Master Performance View") ||
+                el.innerText.includes("L1 Ops Master Performance Review")
+            )
+        );
+    }
+
+    function findExportHeading(doc) {
+        const headings = [...doc.querySelectorAll("h1, h2, h3")];
+
+        return headings.find(el =>
+            el.innerText &&
+            el.innerText.includes("Export Master View")
+        );
+    }
+
+    async function captureMasterSection() {
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
 
         const doc = window.parent.document;
 
-        // Capture the main Streamlit content area, not just the visible viewport
         const target =
             doc.querySelector('[data-testid="stMainBlockContainer"]') ||
             doc.querySelector('[data-testid="stAppViewContainer"]') ||
             doc.body;
 
+        const heading = findDashboardHeading(doc);
+        const exportHeading = findExportHeading(doc);
+
+        if (!heading) {
+            alert("Could not find L1 Ops Master Performance heading to export.");
+            return null;
+        }
+
         const oldScroll = window.parent.scrollY;
         window.parent.scrollTo(0, 0);
 
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 600));
 
-        const canvas = await window.parent.html2canvas(target, {
+        const fullCanvas = await window.parent.html2canvas(target, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
@@ -1584,12 +1612,52 @@ components.html(
             scrollY: 0
         });
 
+        const scale = 2;
+        const targetRect = target.getBoundingClientRect();
+        const headingRect = heading.getBoundingClientRect();
+
+        let cropY = Math.max(0, (headingRect.top - targetRect.top - 20) * scale);
+
+        let cropHeight;
+
+        if (exportHeading) {
+            const exportRect = exportHeading.getBoundingClientRect();
+            cropHeight = Math.max(
+                500,
+                (exportRect.top - headingRect.top - 30) * scale
+            );
+        } else {
+            cropHeight = fullCanvas.height - cropY;
+        }
+
+        cropHeight = Math.min(cropHeight, fullCanvas.height - cropY);
+
+        const cropCanvas = doc.createElement("canvas");
+        cropCanvas.width = fullCanvas.width;
+        cropCanvas.height = cropHeight;
+
+        const ctx = cropCanvas.getContext("2d");
+
+        ctx.drawImage(
+            fullCanvas,
+            0,
+            cropY,
+            fullCanvas.width,
+            cropHeight,
+            0,
+            0,
+            fullCanvas.width,
+            cropHeight
+        );
+
         window.parent.scrollTo(0, oldScroll);
-        return canvas;
+
+        return cropCanvas;
     }
 
-    async function exportPNG() {
-        const canvas = await getCanvas();
+    async function exportMasterPNG() {
+        const canvas = await captureMasterSection();
+        if (!canvas) return;
 
         const link = window.parent.document.createElement("a");
         link.download = "l1_ops_master_view.png";
@@ -1597,11 +1665,13 @@ components.html(
         link.click();
     }
 
-    async function exportPDF() {
-        const canvas = await getCanvas();
-        const imgData = canvas.toDataURL("image/png");
+    async function exportMasterPDF() {
+        const canvas = await captureMasterSection();
+        if (!canvas) return;
 
+        const imgData = canvas.toDataURL("image/png");
         const { jsPDF } = window.parent.jspdf;
+
         const pdf = new jsPDF("landscape", "pt", "a4");
 
         const pageWidth = pdf.internal.pageSize.getWidth();
