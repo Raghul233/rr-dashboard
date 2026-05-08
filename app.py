@@ -1507,8 +1507,8 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
     with k3:
         st.metric(
             "⬆️ Moved to L2",
-            f"{total_moved_l2}",
-            f"{overall_l2_pct:.1f}%"
+            f"{l2_total}",
+            f"{l2_pct:.1f}%"
         )
 
     with k4:
