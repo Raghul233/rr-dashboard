@@ -1477,7 +1477,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
                 font-size:22px;
                 color:#F8F9F9;
             ">
-                L1 Ops resolved {total_l1_resolved} of
+                L1 Ops resolved {l1_total} of
                 {total_issues} total issues,
                 reducing L2 dependency and saving escalation bandwidth.
             </div>
