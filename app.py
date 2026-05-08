@@ -1537,27 +1537,6 @@ with tab4:
 
             st.altair_chart(trend_chart_export, use_container_width=True)
 
-        st.divider()
-
-        # -------------------------------
-        # People Performance
-        # -------------------------------
-        st.subheader("👥 People Performance")
-
-        try:
-            export_people = people_summary_mv.rename(
-                columns={"Total Contribution": "Total"}
-            )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
-
-            st.dataframe(
-                export_people,
-                use_container_width=True,
-                hide_index=True,
-                height=240,
-            )
-        except Exception:
-            st.info("People performance table could not be loaded.")
-
         st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
     # =========================================================
