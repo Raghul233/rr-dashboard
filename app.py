@@ -1458,111 +1458,111 @@ with tab4:
 
         st.divider()
 
-    # =====================================================
-    # POD + PEOPLE PERFORMANCE SIDE BY SIDE
-    # =====================================================
-    left_table, right_table = st.columns([1.25, 1], gap="large")
-
-    # -----------------------------------------------------
-    # POD PERFORMANCE
-    # -----------------------------------------------------
-    with left_table:
-
-        st.subheader("🧾 POD Performance")
-
-        export_pod_table = pod_master.copy()
-
-        export_pod_table["Sev-2 Resolved %"] = (
-            export_pod_table["Sev2_Contributed"]
-            / export_pod_table["Sev2_Received"].replace(0, pd.NA)
-            * 100
-        ).fillna(0).round(1)
-
-        export_pod_table["Sev-3 Resolved %"] = (
-            export_pod_table["Sev3_Resolved_RCA"]
-            / export_pod_table["Sev3_Received"].replace(0, pd.NA)
-            * 100
-        ).fillna(0).round(1)
-
-        export_pod_table = export_pod_table.rename(
-            columns={
-                "PODS": "POD",
-                "Sev2_Received": "Sev-2\nReceived",
-                "Sev3_Received": "Sev-3\nReceived",
-                "Sev-2 Resolved %": "Sev-2\nResolved %",
-                "Sev-3 Resolved %": "Sev-3\nResolved %",
-            }
-        )
-
-        export_pod_table = export_pod_table[
-            [
-                "POD",
-                "Sev-3\nReceived",
-                "Sev-3\nResolved %",
-                "Sev-2\nReceived",
-                "Sev-2\nResolved %",
-            ]
-        ].copy()
-
-        styled_export_pod_table = (
-            export_pod_table.style
-            .format(
-                {
-                    "Sev-3\nResolved %": "{:.1f}%",
-                    "Sev-2\nResolved %": "{:.1f}%",
+        # =====================================================
+        # POD + PEOPLE PERFORMANCE SIDE BY SIDE
+        # =====================================================
+        left_table, right_table = st.columns([1.25, 1], gap="large")
+    
+        # -----------------------------------------------------
+        # POD PERFORMANCE
+        # -----------------------------------------------------
+        with left_table:
+    
+            st.subheader("🧾 POD Performance")
+    
+            export_pod_table = pod_master.copy()
+    
+            export_pod_table["Sev-2 Resolved %"] = (
+                export_pod_table["Sev2_Contributed"]
+                / export_pod_table["Sev2_Received"].replace(0, pd.NA)
+                * 100
+            ).fillna(0).round(1)
+    
+            export_pod_table["Sev-3 Resolved %"] = (
+                export_pod_table["Sev3_Resolved_RCA"]
+                / export_pod_table["Sev3_Received"].replace(0, pd.NA)
+                * 100
+            ).fillna(0).round(1)
+    
+            export_pod_table = export_pod_table.rename(
+                columns={
+                    "PODS": "POD",
+                    "Sev2_Received": "Sev-2\nReceived",
+                    "Sev3_Received": "Sev-3\nReceived",
+                    "Sev-2 Resolved %": "Sev-2\nResolved %",
+                    "Sev-3 Resolved %": "Sev-3\nResolved %",
                 }
             )
-        )
-
-        st.dataframe(
-            styled_export_pod_table,
-            use_container_width=True,
-            hide_index=True,
-            height=(len(export_pod_table) + 1) * 35
-        )
-
-    # -----------------------------------------------------
-    # PEOPLE PERFORMANCE
-    # -----------------------------------------------------
-    with right_table:
-
-        st.subheader("👥 People Performance")
-
-        export_people = people_summary_mv.copy()
-
-        export_people = export_people.rename(
-            columns={
-                "Name": "Person",
-                "Sev2_Contributed": "Sev-2 Resolved",
-                "Sev3_Resolved_RCA": "Sev-3 Resolved",
-                "Sev-2": "Sev-2 Resolved",
-                "Sev-3": "Sev-3 Resolved",
-                "Total Contribution": "Total",
-            }
-        )
-
-        # Ensure Total exists
-        if "Total" not in export_people.columns:
-            export_people["Total"] = (
-                export_people.get("Sev-2 Resolved", 0)
-                + export_people.get("Sev-3 Resolved", 0)
+    
+            export_pod_table = export_pod_table[
+                [
+                    "POD",
+                    "Sev-3\nReceived",
+                    "Sev-3\nResolved %",
+                    "Sev-2\nReceived",
+                    "Sev-2\nResolved %",
+                ]
+            ].copy()
+    
+            styled_export_pod_table = (
+                export_pod_table.style
+                .format(
+                    {
+                        "Sev-3\nResolved %": "{:.1f}%",
+                        "Sev-2\nResolved %": "{:.1f}%",
+                    }
+                )
             )
-
-        export_people = export_people[
-            [
-                "Person",
-                "Sev-3 Resolved",
-                "Sev-2 Resolved",
-                "Total",
-            ]
-        ].copy()
-
-        st.dataframe(
-            export_people,
-            use_container_width=True,
-            hide_index=True,
-            height=(len(export_people) + 1) * 35
-        )        
+    
+            st.dataframe(
+                styled_export_pod_table,
+                use_container_width=True,
+                hide_index=True,
+                height=(len(export_pod_table) + 1) * 35
+            )
+    
+        # -----------------------------------------------------
+        # PEOPLE PERFORMANCE
+        # -----------------------------------------------------
+        with right_table:
+    
+            st.subheader("👥 People Performance")
+    
+            export_people = people_summary_mv.copy()
+    
+            export_people = export_people.rename(
+                columns={
+                    "Name": "Person",
+                    "Sev2_Contributed": "Sev-2 Resolved",
+                    "Sev3_Resolved_RCA": "Sev-3 Resolved",
+                    "Sev-2": "Sev-2 Resolved",
+                    "Sev-3": "Sev-3 Resolved",
+                    "Total Contribution": "Total",
+                }
+            )
+    
+            # Ensure Total exists
+            if "Total" not in export_people.columns:
+                export_people["Total"] = (
+                    export_people.get("Sev-2 Resolved", 0)
+                    + export_people.get("Sev-3 Resolved", 0)
+                )
+    
+            export_people = export_people[
+                [
+                    "Person",
+                    "Sev-3 Resolved",
+                    "Sev-2 Resolved",
+                    "Total",
+                ]
+            ].copy()
+    
+            st.dataframe(
+                export_people,
+                use_container_width=True,
+                hide_index=True,
+                height=(len(export_people) + 1) * 35
+            )        
         
     st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
