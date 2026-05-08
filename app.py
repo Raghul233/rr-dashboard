@@ -1075,57 +1075,57 @@ with tab4:
     # -------------------------------
     # POD Performance Cards
     # -------------------------------
-st.markdown("### 🧩 POD Performance Snapshot")
-
-pod_cards = (
-    pod_view_p1.groupby("PODS", as_index=False)[
-        ["Sev2_Received", "Sev3_Received", "Total Issues", "L1 Resolved", "Moved to L2"]
-    ]
-    .sum()
-)
-
-pod_cards["L1 Resolved %"] = _p1_safe_pct(
-    pod_cards["L1 Resolved"], pod_cards["Total Issues"]
-).round(1)
-
-pod_cards["Moved to L2 %"] = _p1_safe_pct(
-    pod_cards["Moved to L2"], pod_cards["Total Issues"]
-).round(1)
-
-pod_cards = pod_cards.sort_values(
-    ["L1 Resolved %", "Total Issues"],
-    ascending=[False, False]
-)
-
-card_cols = st.columns(5)
-
-for idx, row in pod_cards.reset_index(drop=True).iterrows():
-    with card_cols[idx % 5]:
-        with st.container(border=True):
-            st.markdown(f"#### 🧩 {row['PODS']}")
-            st.caption("POD summary")
-
-            st.metric("Total", int(row["Total Issues"]))
-
-            c1, c2 = st.columns(2)
-            with c1:
-                st.metric("Sev 2", int(row["Sev2_Received"]))
-            with c2:
-                st.metric("Sev 3", int(row["Sev3_Received"]))
-
-            st.divider()
-
-            st.metric(
-                "✅ L1",
-                int(row["L1 Resolved"]),
-                f"{row['L1 Resolved %']:.1f}%"
-            )
-
-            st.metric(
-                "⬆️ L2",
-                int(row["Moved to L2"]),
-                f"{row['Moved to L2 %']:.1f}%"
-            )
+    st.markdown("### 🧩 POD Performance Snapshot")
+    
+    pod_cards = (
+        pod_view_p1.groupby("PODS", as_index=False)[
+            ["Sev2_Received", "Sev3_Received", "Total Issues", "L1 Resolved", "Moved to L2"]
+        ]
+        .sum()
+    )
+    
+    pod_cards["L1 Resolved %"] = _p1_safe_pct(
+        pod_cards["L1 Resolved"], pod_cards["Total Issues"]
+    ).round(1)
+    
+    pod_cards["Moved to L2 %"] = _p1_safe_pct(
+        pod_cards["Moved to L2"], pod_cards["Total Issues"]
+    ).round(1)
+    
+    pod_cards = pod_cards.sort_values(
+        ["L1 Resolved %", "Total Issues"],
+        ascending=[False, False]
+    )
+    
+    card_cols = st.columns(5)
+    
+    for idx, row in pod_cards.reset_index(drop=True).iterrows():
+        with card_cols[idx % 5]:
+            with st.container(border=True):
+                st.markdown(f"#### 🧩 {row['PODS']}")
+                st.caption("POD summary")
+    
+                st.metric("Total", int(row["Total Issues"]))
+    
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.metric("Sev 2", int(row["Sev2_Received"]))
+                with c2:
+                    st.metric("Sev 3", int(row["Sev3_Received"]))
+    
+                st.divider()
+    
+                st.metric(
+                    "✅ L1",
+                    int(row["L1 Resolved"]),
+                    f"{row['L1 Resolved %']:.1f}%"
+                )
+    
+                st.metric(
+                    "⬆️ L2",
+                    int(row["Moved to L2"]),
+                    f"{row['Moved to L2 %']:.1f}%"
+                )
             # -------------------------------
     # Charts
     # -------------------------------
