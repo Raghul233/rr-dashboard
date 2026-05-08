@@ -1521,64 +1521,26 @@ with tab4:
             height=255,
         )
 
-    # -----------------------------------------------------
-    # TREND VIEW
-    # -----------------------------------------------------
-    with right_export:
+    
 
-        st.subheader("📈 Trend View")
+        # -------------------------------
+        # People Performance
+        # -------------------------------
+        st.subheader("👥 People Performance")
 
-        trend_chart_export = (
-            alt.Chart(pod_master)
-            .mark_bar(
-                cornerRadiusTopRight=6,
-                cornerRadiusBottomRight=6
-            )
-            .encode(
-                y=alt.Y(
-                    "PODS:N",
-                    sort="-x",
-                    title=None,
-                    axis=alt.Axis(
-                        labelFontSize=14,
-                        labelLimit=220,
-                        labelPadding=12
-                    )
-                ),
-                x=alt.X(
-                    "L1 Resolved %:Q",
-                    scale=alt.Scale(domain=[0, 100]),
-                    title="L1 Resolved %",
-                    axis=alt.Axis(
-                        titleFontSize=14,
-                        labelFontSize=12
-                    )
-                ),
-                tooltip=[
-                    alt.Tooltip("PODS:N", title="POD"),
-                    alt.Tooltip(
-                        "L1 Resolved %:Q",
-                        title="L1 %",
-                        format=".1f"
-                    ),
-                    alt.Tooltip(
-                        "Total Issues:Q",
-                        title="Issues"
-                    ),
-                ],
-            )
-            .properties(
-                height=255
-            )
-            .configure_view(
-                strokeOpacity=0
-            )
-        )
+        try:
+            export_people = people_summary_mv.rename(
+                columns={"Total Contribution": "Total"}
+            )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
 
-        st.altair_chart(
-            trend_chart_export,
-            use_container_width=True
-        )
+            st.dataframe(
+                export_people,
+                use_container_width=True,
+                hide_index=True,
+                height=240,
+            )
+        except Exception:
+            st.info("People performance table could not be loaded.")
         st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
     # =========================================================
