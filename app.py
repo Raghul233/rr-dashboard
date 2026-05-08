@@ -1108,168 +1108,78 @@ with tab4:
 
     st.divider()
 
-    # -------------------------------
-    # POD Command Center
-    # -------------------------------
-    st.markdown("## 🧩 POD Performance Command Center")
-    st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
+# -------------------------------
+# POD Command Center
+# -------------------------------
+st.markdown("## 🧩 POD Performance Command Center")
+st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
 
-    pod_cols = st.columns(5)
+pod_cols = st.columns(5)
 
-    for idx, row in pod_master.reset_index(drop=True).iterrows():
-        resolve_pct = float(row["L1 Resolved %"])
-        l2_pct_local = float(row["Moved to L2 %"])
+for idx, row in pod_master.reset_index(drop=True).iterrows():
+    resolve_pct = float(row["L1 Resolved %"])
+    l2_pct_local = float(row["Moved to L2 %"])
 
-        pod_name = str(row["PODS"])
-        display_pod_name = pod_name.replace("GROWTH 10X", "GROWTH<br>10X")
+    pod_name = str(row["PODS"])
 
-        with pod_cols[idx % 5]:
-            with st.container(border=True):
+    with pod_cols[idx % 5]:
+        with st.container(border=True):
 
-                # Fixed-height POD title for alignment
-                st.markdown(
-                    f"""
-                    <div style="
-                        min-height:82px;
-                        display:flex;
-                        align-items:flex-start;
-                        gap:8px;
-                        font-size:28px;
-                        font-weight:900;
-                        line-height:1.12;
-                        color:white;
-                        margin-bottom:8px;
-                        word-break:break-word;
-                    ">
-                        <span>🧩</span>
-                        <span>{display_pod_name}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            # POD title
+            st.markdown(
+                f"""
+                <div style="
+                    min-height:72px;
+                    font-size:24px;
+                    font-weight:900;
+                    line-height:1.15;
+                    color:white;
+                    margin-bottom:8px;
+                    word-break:normal;
+                    overflow-wrap:break-word;
+                ">
+                    🧩 {pod_name}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-                # Total Issues
-                st.markdown(
-                    f"""
-                    <div style="margin-bottom:12px;">
-                        <div style="font-size:13px;color:#d1d5db;font-weight:800;">Total Issues</div>
-                        <div style="font-size:38px;font-weight:900;color:white;line-height:1.1;">
-                            {int(row["Total Issues"])}
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            st.metric("Total Issues", int(row["Total Issues"]))
 
-                # Severity split
-                sev_a, sev_b = st.columns(2)
-                with sev_a:
-                    st.markdown(
-                        f"""
-                        <div>
-                            <div style="font-size:13px;color:#d1d5db;font-weight:800;">Sev 2</div>
-                            <div style="font-size:34px;font-weight:900;color:white;">
-                                {int(row["Sev2_Received"])}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+            sev1, sev2 = st.columns(2)
+            with sev1:
+                st.metric("Sev 2", int(row["Sev2_Received"]))
+            with sev2:
+                st.metric("Sev 3", int(row["Sev3_Received"]))
 
-                with sev_b:
-                    st.markdown(
-                        f"""
-                        <div>
-                            <div style="font-size:13px;color:#d1d5db;font-weight:800;">Sev 3</div>
-                            <div style="font-size:34px;font-weight:900;color:white;">
-                                {int(row["Sev3_Received"])}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+            st.markdown("**✅ L1 Resolve Rate**")
+            st.progress(min(resolve_pct / 100, 1.0))
+            st.markdown(
+                f"""
+                <div style="font-size:24px;font-weight:900;color:#86efac;">
+                    {resolve_pct:.1f}%
+                </div>
+                <div style="font-size:12px;color:#AEB6C2;margin-bottom:10px;">
+                    {int(row["L1 Resolved"])} resolved within L1
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-                # L1 Resolve progress
-                st.markdown(
-                    f"""
-                    <div style="margin-top:18px;">
-                        <div style="font-size:13px;font-weight:900;color:white;">
-                            ✅ L1 Resolve Rate
-                        </div>
-
-                        <div style="
-                            background:#1f2937;
-                            border-radius:999px;
-                            height:13px;
-                            margin-top:7px;
-                            overflow:hidden;
-                        ">
-                            <div style="
-                                width:{resolve_pct}%;
-                                background:linear-gradient(90deg,#22c55e,#86efac);
-                                height:13px;
-                                border-radius:999px;
-                            "></div>
-                        </div>
-
-                        <div style="
-                            font-size:27px;
-                            font-weight:950;
-                            color:#86efac;
-                            margin-top:7px;
-                            line-height:1.05;
-                        ">
-                            {resolve_pct:.1f}%
-                        </div>
-
-                        <div style="font-size:12px;color:#AEB6C2;margin-top:4px;">
-                            {int(row["L1 Resolved"])} resolved within L1
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # Moved to L2 progress
-                st.markdown(
-                    f"""
-                    <div style="margin-top:16px;">
-                        <div style="font-size:13px;font-weight:900;color:white;">
-                            ⬆️ Moved to L2
-                        </div>
-
-                        <div style="
-                            background:#1f2937;
-                            border-radius:999px;
-                            height:11px;
-                            margin-top:7px;
-                            overflow:hidden;
-                        ">
-                            <div style="
-                                width:{l2_pct_local}%;
-                                background:linear-gradient(90deg,#f59e0b,#fbbf24);
-                                height:11px;
-                                border-radius:999px;
-                            "></div>
-                        </div>
-
-                        <div style="
-                            font-size:23px;
-                            font-weight:950;
-                            color:#fbbf24;
-                            margin-top:7px;
-                            line-height:1.05;
-                        ">
-                            {l2_pct_local:.1f}%
-                        </div>
-
-                        <div style="font-size:12px;color:#AEB6C2;margin-top:4px;">
-                            {int(row["Moved to L2"])} escalated
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            st.markdown("**⬆️ Moved to L2**")
+            st.progress(min(l2_pct_local / 100, 1.0))
+            st.markdown(
+                f"""
+                <div style="font-size:22px;font-weight:900;color:#fbbf24;">
+                    {l2_pct_local:.1f}%
+                </div>
+                <div style="font-size:12px;color:#AEB6C2;">
+                    {int(row["Moved to L2"])} escalated
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    
     # -------------------------------
     # Charts
     # -------------------------------
