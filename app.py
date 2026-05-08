@@ -1521,31 +1521,48 @@ with tab4:
             height=310,
         )
 
-    # -----------------------------------------------------
+        # -----------------------------------------------------
     # PEOPLE PERFORMANCE
     # -----------------------------------------------------
     with right_table:
 
         st.subheader("👥 People Performance")
 
-        export_people = people_summary_mv.rename(
+        export_people = people_summary_mv.copy()
+
+        export_people = export_people.rename(
             columns={
-                "Total Contribution": "Total"
+                "Name": "Person",
+                "Sev2_Contributed": "Sev-2 Resolved",
+                "Sev3_Resolved_RCA": "Sev-3 Resolved",
+                "Sev-2": "Sev-2 Resolved",
+                "Sev-3": "Sev-3 Resolved",
+                "Total Contribution": "Total",
             }
-        )[[
-            "Person",
-            "Sev-2_Resolved",
-            "Sev-3_Resolved",
-            "Total"
-        ]].copy()
+        )
+
+        # Ensure Total exists
+        if "Total" not in export_people.columns:
+            export_people["Total"] = (
+                export_people.get("Sev-2 Resolved", 0)
+                + export_people.get("Sev-3 Resolved", 0)
+            )
+
+        export_people = export_people[
+            [
+                "Person",
+                "Sev-3 Resolved",
+                "Sev-2 Resolved",
+                "Total",
+            ]
+        ].copy()
 
         st.dataframe(
             export_people,
             use_container_width=True,
             hide_index=True,
             height=310,
-        )
-        st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
+        )        st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
     # =========================================================
     # EXPORT SECTION
