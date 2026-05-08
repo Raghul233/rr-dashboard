@@ -1458,7 +1458,7 @@ with tab4:
 
         st.divider()
 
-        # =====================================================
+    # =====================================================
     # POD + PEOPLE PERFORMANCE SIDE BY SIDE
     # =====================================================
     left_table, right_table = st.columns([1.25, 1], gap="large")
@@ -1518,10 +1518,10 @@ with tab4:
             styled_export_pod_table,
             use_container_width=True,
             hide_index=True,
-            height=310,
+            height=(len(export_pod_table) + 1) * 35
         )
 
-        # -----------------------------------------------------
+    # -----------------------------------------------------
     # PEOPLE PERFORMANCE
     # -----------------------------------------------------
     with right_table:
@@ -1561,7 +1561,7 @@ with tab4:
             export_people,
             use_container_width=True,
             hide_index=True,
-            height=310,
+            height=(len(export_people) + 1) * 35
         )        
         
     st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
