@@ -1422,13 +1422,16 @@ with tab4:
 
 # -------------------------------
 # Landscape Export View for PNG
+# Hidden/collapsed in Tab 5, used only for PNG export
 # -------------------------------
-st.divider()
-st.markdown("## 🖼️ Landscape Export View")
-st.caption("This compact layout is optimized for single-image PNG export.")
+with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
 
-with st.container(border=True):
     st.markdown(f"## 🌟 L1 Ops Master Performance View — {selected_year}")
+
+    st.caption(
+        f"Export view optimized for leadership snapshot | "
+        f"Month: {'All / YTD' if master_month_filter == 'All' else master_month_filter}"
+    )
 
     st.markdown(
         f"""
@@ -1440,7 +1443,7 @@ with st.container(border=True):
             border:1px solid rgba(74,222,128,0.35);
         ">
             <div style="font-size:15px;color:#bbf7d0;font-weight:800;">
-                💡 L1 Impact Created
+                💡 L1 Impact Created — {'YTD' if master_month_filter == 'All' else master_month_filter.title()}
             </div>
             <div style="font-size:34px;color:white;font-weight:950;margin-top:4px;">
                 {l1_pct}% resolved within L1
@@ -1458,12 +1461,16 @@ with st.container(border=True):
 
     with lk1:
         st.metric("🚨 Total Issues", total_issues)
+
     with lk2:
         st.metric("✅ L1 Resolved", l1_total, f"{l1_pct}%")
+
     with lk3:
         st.metric("⬆️ Moved to L2", l2_total, f"{l2_pct}%")
+
     with lk4:
         st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
+
     with lk5:
         st.metric("🥇 Best POD", best_pod)
 
@@ -1561,11 +1568,6 @@ with st.container(border=True):
                 trend_landscape["Total Issues"],
             ).round(1)
 
-            trend_landscape["Moved to L2 %"] = _mv_safe_pct(
-                trend_landscape["Moved to L2"],
-                trend_landscape["Total Issues"],
-            ).round(1)
-
             l1_trend_chart = (
                 alt.Chart(trend_landscape)
                 .mark_line(point=True)
@@ -1579,34 +1581,14 @@ with st.container(border=True):
                     tooltip=[
                         "Month",
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
                         alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
                     ],
                 )
-                .properties(height=210)
+                .properties(height=240)
             )
 
             st.altair_chart(l1_trend_chart, use_container_width=True)
-
-            l2_trend_chart = (
-                alt.Chart(trend_landscape)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
-                    y=alt.Y(
-                        "Moved to L2 %:Q",
-                        title="L2 %",
-                        scale=alt.Scale(domain=[0, 100]),
-                    ),
-                    tooltip=[
-                        "Month",
-                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
-                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
-                    ],
-                )
-                .properties(height=210)
-            )
-
-            st.altair_chart(l2_trend_chart, use_container_width=True)
 
         else:
             pod_l1_chart = (
@@ -1621,33 +1603,15 @@ with st.container(border=True):
                     y=alt.Y("PODS:N", sort="-x", title=None),
                     tooltip=[
                         "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
                         alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
                     ],
                 )
-                .properties(height=210)
+                .properties(height=240)
             )
 
             st.altair_chart(pod_l1_chart, use_container_width=True)
-
-            pod_l2_chart = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
-                .encode(
-                    x=alt.X(
-                        "Moved to L2 %:Q",
-                        title="L2 %",
-                        scale=alt.Scale(domain=[0, 100]),
-                    ),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
-                    ],
-                )
-                .properties(height=210)
-            )
-
-            st.altair_chart(pod_l2_chart, use_container_width=True)
 
         st.markdown("### 👥 People Performance")
 
@@ -1697,9 +1661,9 @@ with st.container(border=True):
                     hide_index=True,
                     height=250,
                 )
+
         except Exception:
             st.info("People performance table could not be loaded.")
-
 # -------------------------------
 # Export buttons
 # PNG = landscape export view only
