@@ -1487,20 +1487,20 @@ with tab4:
         export_pod_table = export_pod_table.rename(
             columns={
                 "PODS": "POD",
-                "Sev2_Received": "Sev-2",
-                "Sev3_Received": "Sev-3",
-                "Sev-2 Resolved %": "Sev-2 %",
-                "Sev-3 Resolved %": "Sev-3 %",
+                "Sev2_Received": "Sev-2\nReceived",
+                "Sev3_Received": "Sev-3\nReceived",
+                "Sev-2 Resolved %": "Sev-2\nResolved %",
+                "Sev-3 Resolved %": "Sev-3\nResolved %",
             }
         )
 
         export_pod_table = export_pod_table[
             [
                 "POD",
-                "Sev-3",
-                "Sev-3 %",
-                "Sev-2",
-                "Sev-2 %",
+                "Sev-3\nReceived",
+                "Sev-3\nResolved %",
+                "Sev-2\nReceived",
+                "Sev-2\nResolved %",
             ]
         ].copy()
 
@@ -1508,8 +1508,8 @@ with tab4:
             export_pod_table.style
             .format(
                 {
-                    "Sev-3 %": "{:.1f}%",
-                    "Sev-2 %": "{:.1f}%",
+                    "Sev-3\nResolved %": "{:.1f}%",
+                    "Sev-2\nResolved %": "{:.1f}%",
                 }
             )
         )
