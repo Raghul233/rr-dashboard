@@ -1440,7 +1440,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
 
             <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
                 Export view optimized for leadership snapshot |
-                Month: <b>{master_month}</b>
+                Month: <b>{'All / YTD' if master_month_filter == 'All' else master_month_filter.title()}</b>
             </div>
         </div>
         """,
@@ -1460,7 +1460,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
             margin-bottom:25px;
         ">
             <div style="font-size:24px; font-weight:700;">
-                💡 L1 Impact Created — {master_month}
+                💡 L1 Impact Created — {'YTD' if master_month_filter == 'All' else master_month_filter.title()}
             </div>
 
             <div style="
