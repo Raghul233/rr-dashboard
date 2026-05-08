@@ -1802,45 +1802,42 @@ components.html(
     const doc = window.parent.document;
     const main = getMainContainer();
 
-    // Find the expander/header text
     const allNodes = [...doc.querySelectorAll("*")];
 
-    const expanderTextNode = allNodes.find(el =>
+    const expanderNode = allNodes.find(el =>
         el.innerText &&
         el.innerText.trim().includes("Landscape Export View for PNG")
     );
 
-    if (!expanderTextNode) {
+    if (!expanderNode) {
         alert("Could not find Landscape Export View for PNG expander.");
         return;
     }
 
     // Open expander if collapsed
-    const clickableExpander =
-        expanderTextNode.closest("details") ||
-        expanderTextNode.closest("button") ||
-        expanderTextNode.closest('[data-testid="stExpander"]');
-
-    const alreadyOpen =
-        expanderTextNode.getAttribute("aria-expanded") === "true" ||
-        (clickableExpander && clickableExpander.open === true);
-
-    if (!alreadyOpen) {
-        expanderTextNode.click();
+    if (
+        expanderNode.getAttribute("aria-expanded") === "false" ||
+        expanderNode.closest('[data-testid="stExpander"]')
+    ) {
+        expanderNode.click();
         await new Promise(r => setTimeout(r, 1500));
     }
 
-    // Re-query after opening
+    const expanderTop = expanderNode.getBoundingClientRect().top;
+
     const headings = [...doc.querySelectorAll("h1, h2, h3")];
 
+    // Find ONLY the L1 heading that appears AFTER the Landscape Export expander
     const landscapeHeading = headings.find(el =>
         el.innerText &&
-        el.innerText.includes("L1 Ops Master Performance View")
+        el.innerText.includes("L1 Ops Master Performance View") &&
+        el.getBoundingClientRect().top > expanderTop
     );
 
     const exportHeading = headings.find(el =>
         el.innerText &&
-        el.innerText.includes("Export Master View")
+        el.innerText.includes("Export Master View") &&
+        el.getBoundingClientRect().top > expanderTop
     );
 
     if (!landscapeHeading) {
@@ -1873,7 +1870,6 @@ components.html(
 
     link.click();
 }
-
     // ------------------------------------
     // SECTION CAPTURE FOR PDF
     // ------------------------------------
