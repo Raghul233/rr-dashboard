@@ -1421,7 +1421,9 @@ with tab4:
     st.divider()
 
 # -------------------------------
-# Export buttons - capture only Tab 5 dashboard content
+# Export buttons
+# PNG = full dashboard image
+# PDF = section-wise pages, no section cut
 # -------------------------------
 st.markdown("## ⬇️ Export Master View")
 
@@ -1464,90 +1466,95 @@ components.html(
         });
     }
 
-    function findDashboardHeading(doc) {
-        const headings = [...doc.querySelectorAll("h1, h2, h3")];
-
-        return headings.find(el =>
-            el.innerText &&
-            (
-                el.innerText.includes("L1 Ops Master Performance View") ||
-                el.innerText.includes("L1 Ops Master Performance Review")
-            )
-        );
-    }
-
-    function findExportHeading(doc) {
-        const headings = [...doc.querySelectorAll("h1, h2, h3")];
-
-        return headings.find(el =>
-            el.innerText &&
-            el.innerText.includes("Export Master View")
-        );
-    }
-
-    async function captureMasterSection() {
+    async function ensureLibraries() {
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    }
 
+    function getMainContainer() {
         const doc = window.parent.document;
-
-        const target =
+        return (
             doc.querySelector('[data-testid="stMainBlockContainer"]') ||
             doc.querySelector('[data-testid="stAppViewContainer"]') ||
-            doc.body;
+            doc.body
+        );
+    }
 
-        const heading = findDashboardHeading(doc);
-        const exportHeading = findExportHeading(doc);
+    function findHeadingByText(textOptions) {
+        const doc = window.parent.document;
+        const headings = [...doc.querySelectorAll("h1, h2, h3")];
 
-        if (!heading) {
-            alert("Could not find L1 Ops Master Performance heading to export.");
+        return headings.find(el =>
+            el.innerText &&
+            textOptions.some(t => el.innerText.includes(t))
+        );
+    }
+
+    function getDashboardBounds() {
+        const doc = window.parent.document;
+        const main = getMainContainer();
+
+        const startHeading = findHeadingByText([
+            "L1 Ops Master Performance View",
+            "L1 Ops Master Performance Review"
+        ]);
+
+        const exportHeading = findHeadingByText([
+            "Export Master View"
+        ]);
+
+        if (!startHeading) {
+            alert("Could not find L1 Ops Master Performance heading.");
             return null;
         }
 
+        const mainRect = main.getBoundingClientRect();
+        const startRect = startHeading.getBoundingClientRect();
+
+        let endTop;
+
+        if (exportHeading) {
+            endTop = exportHeading.getBoundingClientRect().top;
+        } else {
+            endTop = mainRect.bottom;
+        }
+
+        return {
+            main,
+            startY: Math.max(0, startRect.top - mainRect.top - 20),
+            endY: Math.max(startRect.top - mainRect.top + 400, endTop - mainRect.top - 30)
+        };
+    }
+
+    async function captureElementRegion(element, startY, endY) {
         const oldScroll = window.parent.scrollY;
         window.parent.scrollTo(0, 0);
+        await new Promise(r => setTimeout(r, 700));
 
-        await new Promise(r => setTimeout(r, 600));
-
-        const fullCanvas = await window.parent.html2canvas(target, {
+        const fullCanvas = await window.parent.html2canvas(element, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: "#0e1117",
-            width: target.scrollWidth,
-            height: target.scrollHeight,
-            windowWidth: target.scrollWidth,
-            windowHeight: target.scrollHeight,
+            width: element.scrollWidth,
+            height: element.scrollHeight,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight,
             scrollX: 0,
             scrollY: 0
         });
 
+        window.parent.scrollTo(0, oldScroll);
+
         const scale = 2;
-        const targetRect = target.getBoundingClientRect();
-        const headingRect = heading.getBoundingClientRect();
+        const cropY = Math.max(0, startY * scale);
+        const cropHeight = Math.min((endY - startY) * scale, fullCanvas.height - cropY);
 
-        let cropY = Math.max(0, (headingRect.top - targetRect.top - 20) * scale);
-
-        let cropHeight;
-
-        if (exportHeading) {
-            const exportRect = exportHeading.getBoundingClientRect();
-            cropHeight = Math.max(
-                500,
-                (exportRect.top - headingRect.top - 30) * scale
-            );
-        } else {
-            cropHeight = fullCanvas.height - cropY;
-        }
-
-        cropHeight = Math.min(cropHeight, fullCanvas.height - cropY);
-
-        const cropCanvas = doc.createElement("canvas");
+        const cropCanvas = window.parent.document.createElement("canvas");
         cropCanvas.width = fullCanvas.width;
         cropCanvas.height = cropHeight;
 
         const ctx = cropCanvas.getContext("2d");
-
         ctx.drawImage(
             fullCanvas,
             0,
@@ -1560,14 +1567,16 @@ components.html(
             cropHeight
         );
 
-        window.parent.scrollTo(0, oldScroll);
-
         return cropCanvas;
     }
 
     async function exportMasterPNG() {
-        const canvas = await captureMasterSection();
-        if (!canvas) return;
+        await ensureLibraries();
+
+        const bounds = getDashboardBounds();
+        if (!bounds) return;
+
+        const canvas = await captureElementRegion(bounds.main, bounds.startY, bounds.endY);
 
         const link = window.parent.document.createElement("a");
         link.download = "l1_ops_master_view.png";
@@ -1575,35 +1584,126 @@ components.html(
         link.click();
     }
 
-    async function exportMasterPDF() {
-        const canvas = await captureMasterSection();
-        if (!canvas) return;
+    async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
+        const doc = window.parent.document;
+        const main = getMainContainer();
 
-        const imgData = canvas.toDataURL("image/png");
-        const { jsPDF } = window.parent.jspdf;
+        const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
 
-        const pdf = new jsPDF("landscape", "pt", "a4");
+        const startHeading = allHeadings.find(el =>
+            el.innerText &&
+            headingTexts.some(t => el.innerText.includes(t))
+        );
 
+        if (!startHeading) return null;
+
+        let endHeading = null;
+
+        for (const h of allHeadings) {
+            if (!h.innerText) continue;
+
+            const isAfter = h.getBoundingClientRect().top > startHeading.getBoundingClientRect().top;
+            const matchesNext = nextHeadingTexts.some(t => h.innerText.includes(t));
+
+            if (isAfter && matchesNext) {
+                endHeading = h;
+                break;
+            }
+        }
+
+        const mainRect = main.getBoundingClientRect();
+        const startRect = startHeading.getBoundingClientRect();
+
+        const startY = Math.max(0, startRect.top - mainRect.top - 18);
+
+        let endY;
+
+        if (endHeading) {
+            endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
+        } else {
+            const exportHeading = allHeadings.find(el =>
+                el.innerText && el.innerText.includes("Export Master View")
+            );
+            endY = exportHeading
+                ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
+                : main.scrollHeight;
+        }
+
+        return await captureElementRegion(main, startY, endY);
+    }
+
+    async function addCanvasAsPDFPage(pdf, canvas) {
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
 
-        const imgWidth = pageWidth;
-        const imgHeight = canvas.height * (pageWidth / canvas.width);
+        const margin = 24;
+        const maxWidth = pageWidth - (margin * 2);
+        const maxHeight = pageHeight - (margin * 2);
 
-        let position = 0;
-        let heightLeft = imgHeight;
+        const ratio = Math.min(
+            maxWidth / canvas.width,
+            maxHeight / canvas.height
+        );
 
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        const imgWidth = canvas.width * ratio;
+        const imgHeight = canvas.height * ratio;
 
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+
+        pdf.addImage(
+            canvas.toDataURL("image/png"),
+            "PNG",
+            x,
+            y,
+            imgWidth,
+            imgHeight
+        );
+    }
+
+    async function exportMasterPDF() {
+        await ensureLibraries();
+
+        const { jsPDF } = window.parent.jspdf;
+        const pdf = new jsPDF("landscape", "pt", "a4");
+
+        const sections = [
+            {
+                title: ["L1 Ops Master Performance View", "L1 Ops Master Performance Review"],
+                next: ["POD Performance Command Center", "Leadership Trend View", "Compact Summary", "Export Master View"]
+            },
+            {
+                title: ["POD Performance Command Center"],
+                next: ["Leadership Trend View", "Compact Summary", "Export Master View"]
+            },
+            {
+                title: ["Leadership Trend View", "Trend & POD Comparison"],
+                next: ["Compact Summary", "Summary Tables", "Export Master View"]
+            },
+            {
+                title: ["Compact Summary", "Summary Tables"],
+                next: ["Export Master View"]
+            }
+        ];
+
+        let added = 0;
+
+        for (const section of sections) {
+            const canvas = await captureSectionByHeading(section.title, section.next);
+
+            if (canvas && canvas.height > 50) {
+                if (added > 0) pdf.addPage();
+                await addCanvasAsPDFPage(pdf, canvas);
+                added += 1;
+            }
         }
 
-        pdf.save("l1_ops_master_view.pdf");
+        if (added === 0) {
+            alert("No sections found to export.");
+            return;
+        }
+
+        pdf.save("l1_ops_master_view_sectioned.pdf");
     }
     </script>
     """,
