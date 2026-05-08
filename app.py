@@ -1120,22 +1120,90 @@ with tab4:
         resolve_pct = float(row["L1 Resolved %"])
         l2_pct_local = float(row["Moved to L2 %"])
 
+        pod_name = str(row["PODS"])
+        display_pod_name = pod_name.replace("GROWTH 10X", "GROWTH<br>10X")
+
         with pod_cols[idx % 5]:
             with st.container(border=True):
-                st.markdown(f"### 🧩 {row['PODS']}")
-                st.metric("Total Issues", int(row["Total Issues"]))
 
-                c1, c2 = st.columns(2)
-                with c1:
-                    st.metric("Sev 2", int(row["Sev2_Received"]))
-                with c2:
-                    st.metric("Sev 3", int(row["Sev3_Received"]))
-
+                # Fixed-height POD title for alignment
                 st.markdown(
                     f"""
-                    <div style="margin-top:10px;">
-                        <div style="font-size:13px;font-weight:800;">✅ L1 Resolve Rate</div>
-                        <div style="background:#1f2937;border-radius:999px;height:13px;margin-top:6px;">
+                    <div style="
+                        min-height:82px;
+                        display:flex;
+                        align-items:flex-start;
+                        gap:8px;
+                        font-size:28px;
+                        font-weight:900;
+                        line-height:1.12;
+                        color:white;
+                        margin-bottom:8px;
+                        word-break:break-word;
+                    ">
+                        <span>🧩</span>
+                        <span>{display_pod_name}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Total Issues
+                st.markdown(
+                    f"""
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:13px;color:#d1d5db;font-weight:800;">Total Issues</div>
+                        <div style="font-size:38px;font-weight:900;color:white;line-height:1.1;">
+                            {int(row["Total Issues"])}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Severity split
+                sev_a, sev_b = st.columns(2)
+                with sev_a:
+                    st.markdown(
+                        f"""
+                        <div>
+                            <div style="font-size:13px;color:#d1d5db;font-weight:800;">Sev 2</div>
+                            <div style="font-size:34px;font-weight:900;color:white;">
+                                {int(row["Sev2_Received"])}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                with sev_b:
+                    st.markdown(
+                        f"""
+                        <div>
+                            <div style="font-size:13px;color:#d1d5db;font-weight:800;">Sev 3</div>
+                            <div style="font-size:34px;font-weight:900;color:white;">
+                                {int(row["Sev3_Received"])}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                # L1 Resolve progress
+                st.markdown(
+                    f"""
+                    <div style="margin-top:18px;">
+                        <div style="font-size:13px;font-weight:900;color:white;">
+                            ✅ L1 Resolve Rate
+                        </div>
+
+                        <div style="
+                            background:#1f2937;
+                            border-radius:999px;
+                            height:13px;
+                            margin-top:7px;
+                            overflow:hidden;
+                        ">
                             <div style="
                                 width:{resolve_pct}%;
                                 background:linear-gradient(90deg,#22c55e,#86efac);
@@ -1143,17 +1211,40 @@ with tab4:
                                 border-radius:999px;
                             "></div>
                         </div>
-                        <div style="font-size:24px;font-weight:900;color:#86efac;margin-top:6px;">
+
+                        <div style="
+                            font-size:27px;
+                            font-weight:950;
+                            color:#86efac;
+                            margin-top:7px;
+                            line-height:1.05;
+                        ">
                             {resolve_pct:.1f}%
                         </div>
-                        <div style="font-size:12px;color:#AEB6C2;">
+
+                        <div style="font-size:12px;color:#AEB6C2;margin-top:4px;">
                             {int(row["L1 Resolved"])} resolved within L1
                         </div>
                     </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
-                    <div style="margin-top:12px;">
-                        <div style="font-size:13px;font-weight:800;">⬆️ Moved to L2</div>
-                        <div style="background:#1f2937;border-radius:999px;height:11px;margin-top:6px;">
+                # Moved to L2 progress
+                st.markdown(
+                    f"""
+                    <div style="margin-top:16px;">
+                        <div style="font-size:13px;font-weight:900;color:white;">
+                            ⬆️ Moved to L2
+                        </div>
+
+                        <div style="
+                            background:#1f2937;
+                            border-radius:999px;
+                            height:11px;
+                            margin-top:7px;
+                            overflow:hidden;
+                        ">
                             <div style="
                                 width:{l2_pct_local}%;
                                 background:linear-gradient(90deg,#f59e0b,#fbbf24);
@@ -1161,19 +1252,24 @@ with tab4:
                                 border-radius:999px;
                             "></div>
                         </div>
-                        <div style="font-size:18px;font-weight:900;color:#fbbf24;margin-top:5px;">
+
+                        <div style="
+                            font-size:23px;
+                            font-weight:950;
+                            color:#fbbf24;
+                            margin-top:7px;
+                            line-height:1.05;
+                        ">
                             {l2_pct_local:.1f}%
                         </div>
-                        <div style="font-size:12px;color:#AEB6C2;">
+
+                        <div style="font-size:12px;color:#AEB6C2;margin-top:4px;">
                             {int(row["Moved to L2"])} escalated
                         </div>
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-
-    st.divider()
-
     # -------------------------------
     # Charts
     # -------------------------------
@@ -1414,28 +1510,15 @@ with tab4:
 
     st.divider()
 
-    # -------------------------------
-    # Export buttons - fixed full Tab 5 export
-    # -------------------------------
-    st.markdown("## ⬇️ Export Master View")
+# -------------------------------
+# Export buttons - fixed full Tab 5 export
+# -------------------------------
+st.markdown("## ⬇️ Export Master View")
 
-    components.html(
-        """
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-        <button onclick="downloadMasterPNG()" style="
-            padding:10px 16px;
-            border-radius:8px;
-            border:1px solid #888;
-            cursor:pointer;
-            font-weight:700;
-            margin-right:8px;
-            background:#111827;
-            color:white;
-        ">⬇️ Export Full PNG</button>
-
-        <button onclick="downloadMasterPDF()" style="
+components.html(
+    """
+    <div style="display:flex; gap:10px;">
+        <button onclick="exportPNG()" style="
             padding:10px 16px;
             border-radius:8px;
             border:1px solid #888;
@@ -1443,82 +1526,107 @@ with tab4:
             font-weight:700;
             background:#111827;
             color:white;
-        ">⬇️ Export Full PDF</button>
+        ">⬇️ Export PNG</button>
 
-        <script>
-        function getExportTarget() {
-            const doc = window.parent.document;
-            const markers = [...doc.querySelectorAll("*")].filter(el =>
-                el.innerHTML && el.innerHTML.includes("l1-master-export-root")
-            );
+        <button onclick="exportPDF()" style="
+            padding:10px 16px;
+            border-radius:8px;
+            border:1px solid #888;
+            cursor:pointer;
+            font-weight:700;
+            background:#111827;
+            color:white;
+        ">⬇️ Export PDF</button>
+    </div>
 
-            const root = doc.querySelector("#l1-master-export-root");
-            if (root) return root;
+    <script>
+    async function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            if ([...window.parent.document.scripts].some(s => s.src === src)) {
+                resolve();
+                return;
+            }
+            const script = window.parent.document.createElement("script");
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            window.parent.document.head.appendChild(script);
+        });
+    }
 
-            const main = doc.querySelector("section.main") ||
-                         doc.querySelector('[data-testid="stAppViewContainer"]') ||
-                         doc.body;
+    async function getCanvas() {
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
 
-            return main;
-        }
+        const doc = window.parent.document;
 
-        async function captureFullMaster() {
-            const target = getExportTarget();
+        // Capture the main Streamlit content area, not just the visible viewport
+        const target =
+            doc.querySelector('[data-testid="stMainBlockContainer"]') ||
+            doc.querySelector('[data-testid="stAppViewContainer"]') ||
+            doc.body;
 
-            const canvas = await html2canvas(target, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: "#0e1117",
-                width: target.scrollWidth,
-                height: target.scrollHeight,
-                windowWidth: target.scrollWidth,
-                windowHeight: target.scrollHeight,
-                scrollX: 0,
-                scrollY: 0
-            });
+        const oldScroll = window.parent.scrollY;
+        window.parent.scrollTo(0, 0);
 
-            return canvas;
-        }
+        await new Promise(r => setTimeout(r, 500));
 
-        async function downloadMasterPNG() {
-            const canvas = await captureFullMaster();
-            const link = document.createElement("a");
-            link.download = "l1_ops_master_view.png";
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        }
+        const canvas = await window.parent.html2canvas(target, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#0e1117",
+            width: target.scrollWidth,
+            height: target.scrollHeight,
+            windowWidth: target.scrollWidth,
+            windowHeight: target.scrollHeight,
+            scrollX: 0,
+            scrollY: 0
+        });
 
-        async function downloadMasterPDF() {
-            const canvas = await captureFullMaster();
-            const imgData = canvas.toDataURL("image/png");
+        window.parent.scrollTo(0, oldScroll);
+        return canvas;
+    }
 
-            const { jsPDF } = window.jspdf;
+    async function exportPNG() {
+        const canvas = await getCanvas();
 
-            const pdf = new jsPDF("landscape", "pt", "a4");
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
+        const link = window.parent.document.createElement("a");
+        link.download = "l1_ops_master_view.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
 
-            const imgWidth = pageWidth;
-            const imgHeight = canvas.height * (pageWidth / canvas.width);
+    async function exportPDF() {
+        const canvas = await getCanvas();
+        const imgData = canvas.toDataURL("image/png");
 
-            let heightLeft = imgHeight;
-            let position = 0;
+        const { jsPDF } = window.parent.jspdf;
+        const pdf = new jsPDF("landscape", "pt", "a4");
 
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgWidth = pageWidth;
+        const imgHeight = canvas.height * (pageWidth / canvas.width);
+
+        let position = 0;
+        let heightLeft = imgHeight;
+
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
             pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
             heightLeft -= pageHeight;
-
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-            }
-
-            pdf.save("l1_ops_master_view.pdf");
         }
-        </script>
-        """,
-        height=70,
-    )
+
+        pdf.save("l1_ops_master_view.pdf");
+    }
+    </script>
+    """,
+    height=70,
+)
 
