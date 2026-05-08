@@ -1102,7 +1102,7 @@ with tab4:
     with k4:
         _mv_card("SEVERITY SPLIT", f"{sev2_total} / {sev3_total}", "Sev 2 / Sev 3", "#93c5fd", "📊")
     with k5:
-        _mv_card("BEST POD", best_pod, "Highest L1 resolve %", "#c084fc", "🥇")
+        _mv_card("TOP RESOLVE POD", best_pod, "Highest L1 resolve %", "#c084fc", "🥇")
 
     st.divider()
 
@@ -1457,7 +1457,7 @@ with tab4:
 
         st.divider()
 
-                # -------------------------------
+        # -------------------------------
         # POD Command Center
         # -------------------------------
         title_left, legend_right = st.columns([1.4, 1])
