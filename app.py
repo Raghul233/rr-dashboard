@@ -1463,28 +1463,50 @@ with tab4:
     # LANDSCAPE EXPORT VIEW (ONLY FOR PNG EXPORT)
     # =========================================================
     with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
-    
-        # ---------- START MARKER ----------
-        st.markdown(
-            '<div id="landscape-export-start"></div>',
-            unsafe_allow_html=True
-        )
-    
-        st.markdown(
-            f"""
-            <div style="padding-top:10px; padding-bottom:10px;">
-                <h1 style="font-size:52px; margin-bottom:8px;">
-                    🌟 L1 Ops Master Performance View — {selected_year}
-                </h1>
-    
-                <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                    Export view optimized for leadership snapshot |
-                    Month: <b>{'All / YTD' if master_month_filter == 'All' else master_month_filter.title()}</b>
-                </div>
+
+    # ---------- START MARKER ----------
+    st.markdown(
+        '<div id="landscape-export-start"></div>',
+        unsafe_allow_html=True,
+    )
+
+    export_month_label = (
+        "All / YTD"
+        if master_month_filter == "All"
+        else master_month_filter.title()
+    )
+
+    impact_month_label = (
+        "YTD"
+        if master_month_filter == "All"
+        else master_month_filter.title()
+    )
+
+    st.markdown(
+        f"""
+        <div style="padding-top:10px; padding-bottom:10px;">
+
+            <h1 style="
+                font-size:52px;
+                margin-bottom:8px;
+                font-weight:900;
+            ">
+                🌟 L1 Ops Master Performance View — {selected_year}
+            </h1>
+
+            <div style="
+                font-size:20px;
+                color:#AEB6C1;
+                margin-bottom:25px;
+            ">
+                Export view optimized for leadership snapshot |
+                Month: <b>{export_month_label}</b>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     
         # =====================================================
         # IMPACT BANNER
