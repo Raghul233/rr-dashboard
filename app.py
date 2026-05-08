@@ -1422,7 +1422,7 @@ with tab4:
 
 # -------------------------------
 # Export buttons
-# PNG = full dashboard image
+# PNG = landscape export view only
 # PDF = section-wise pages, no section cut
 # -------------------------------
 st.markdown("## ⬇️ Export Master View")
@@ -1458,10 +1458,12 @@ components.html(
                 resolve();
                 return;
             }
+
             const script = window.parent.document.createElement("script");
             script.src = src;
             script.onload = resolve;
             script.onerror = reject;
+
             window.parent.document.head.appendChild(script);
         });
     }
@@ -1473,6 +1475,7 @@ components.html(
 
     function getMainContainer() {
         const doc = window.parent.document;
+
         return (
             doc.querySelector('[data-testid="stMainBlockContainer"]') ||
             doc.querySelector('[data-testid="stAppViewContainer"]') ||
@@ -1490,45 +1493,12 @@ components.html(
         );
     }
 
-    function getDashboardBounds() {
-        const doc = window.parent.document;
-        const main = getMainContainer();
-
-        const startHeading = findHeadingByText([
-            "L1 Ops Master Performance View",
-            "L1 Ops Master Performance Review"
-        ]);
-
-        const exportHeading = findHeadingByText([
-            "Export Master View"
-        ]);
-
-        if (!startHeading) {
-            alert("Could not find L1 Ops Master Performance heading.");
-            return null;
-        }
-
-        const mainRect = main.getBoundingClientRect();
-        const startRect = startHeading.getBoundingClientRect();
-
-        let endTop;
-
-        if (exportHeading) {
-            endTop = exportHeading.getBoundingClientRect().top;
-        } else {
-            endTop = mainRect.bottom;
-        }
-
-        return {
-            main,
-            startY: Math.max(0, startRect.top - mainRect.top - 20),
-            endY: Math.max(startRect.top - mainRect.top + 400, endTop - mainRect.top - 30)
-        };
-    }
-
     async function captureElementRegion(element, startY, endY) {
+
         const oldScroll = window.parent.scrollY;
+
         window.parent.scrollTo(0, 0);
+
         await new Promise(r => setTimeout(r, 700));
 
         const fullCanvas = await window.parent.html2canvas(element, {
@@ -1547,14 +1517,21 @@ components.html(
         window.parent.scrollTo(0, oldScroll);
 
         const scale = 2;
+
         const cropY = Math.max(0, startY * scale);
-        const cropHeight = Math.min((endY - startY) * scale, fullCanvas.height - cropY);
+
+        const cropHeight = Math.min(
+            (endY - startY) * scale,
+            fullCanvas.height - cropY
+        );
 
         const cropCanvas = window.parent.document.createElement("canvas");
+
         cropCanvas.width = fullCanvas.width;
         cropCanvas.height = cropHeight;
 
         const ctx = cropCanvas.getContext("2d");
+
         ctx.drawImage(
             fullCanvas,
             0,
@@ -1570,21 +1547,68 @@ components.html(
         return cropCanvas;
     }
 
+    // ------------------------------------
+    // PNG EXPORT
+    // Landscape Export View only
+    // ------------------------------------
     async function exportMasterPNG() {
+
         await ensureLibraries();
 
-        const bounds = getDashboardBounds();
-        if (!bounds) return;
+        const doc = window.parent.document;
+        const main = getMainContainer();
 
-        const canvas = await captureElementRegion(bounds.main, bounds.startY, bounds.endY);
+        const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
+
+        const landscapeHeading = allHeadings.find(el =>
+            el.innerText &&
+            el.innerText.includes("Landscape Export View")
+        );
+
+        const exportHeading = allHeadings.find(el =>
+            el.innerText &&
+            el.innerText.includes("Export Master View")
+        );
+
+        if (!landscapeHeading) {
+            alert("Could not find Landscape Export View section.");
+            return;
+        }
+
+        const mainRect = main.getBoundingClientRect();
+        const startRect = landscapeHeading.getBoundingClientRect();
+
+        const startY = Math.max(
+            0,
+            startRect.top - mainRect.top - 15
+        );
+
+        const endY = exportHeading
+            ? exportHeading.getBoundingClientRect().top - mainRect.top - 25
+            : main.scrollHeight;
+
+        const canvas = await captureElementRegion(
+            main,
+            startY,
+            endY
+        );
 
         const link = window.parent.document.createElement("a");
-        link.download = "l1_ops_master_view.png";
+
+        link.download = "l1_ops_master_view_landscape.png";
         link.href = canvas.toDataURL("image/png");
+
         link.click();
     }
 
-    async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
+    // ------------------------------------
+    // SECTION CAPTURE FOR PDF
+    // ------------------------------------
+    async function captureSectionByHeading(
+        headingTexts,
+        nextHeadingTexts
+    ) {
+
         const doc = window.parent.document;
         const main = getMainContainer();
 
@@ -1600,10 +1624,17 @@ components.html(
         let endHeading = null;
 
         for (const h of allHeadings) {
+
             if (!h.innerText) continue;
 
-            const isAfter = h.getBoundingClientRect().top > startHeading.getBoundingClientRect().top;
-            const matchesNext = nextHeadingTexts.some(t => h.innerText.includes(t));
+            const isAfter =
+                h.getBoundingClientRect().top >
+                startHeading.getBoundingClientRect().top;
+
+            const matchesNext =
+                nextHeadingTexts.some(t =>
+                    h.innerText.includes(t)
+                );
 
             if (isAfter && matchesNext) {
                 endHeading = h;
@@ -1614,29 +1645,51 @@ components.html(
         const mainRect = main.getBoundingClientRect();
         const startRect = startHeading.getBoundingClientRect();
 
-        const startY = Math.max(0, startRect.top - mainRect.top - 18);
+        const startY = Math.max(
+            0,
+            startRect.top - mainRect.top - 18
+        );
 
         let endY;
 
         if (endHeading) {
-            endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
+
+            endY =
+                endHeading.getBoundingClientRect().top -
+                mainRect.top -
+                20;
+
         } else {
+
             const exportHeading = allHeadings.find(el =>
-                el.innerText && el.innerText.includes("Export Master View")
+                el.innerText &&
+                el.innerText.includes("Export Master View")
             );
+
             endY = exportHeading
-                ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
+                ? exportHeading.getBoundingClientRect().top -
+                  mainRect.top -
+                  30
                 : main.scrollHeight;
         }
 
-        return await captureElementRegion(main, startY, endY);
+        return await captureElementRegion(
+            main,
+            startY,
+            endY
+        );
     }
 
+    // ------------------------------------
+    // ADD CANVAS TO PDF PAGE
+    // ------------------------------------
     async function addCanvasAsPDFPage(pdf, canvas) {
+
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
 
         const margin = 24;
+
         const maxWidth = pageWidth - (margin * 2);
         const maxHeight = pageHeight - (margin * 2);
 
@@ -1661,39 +1714,90 @@ components.html(
         );
     }
 
+    // ------------------------------------
+    // PDF EXPORT
+    // One section per page
+    // ------------------------------------
     async function exportMasterPDF() {
+
         await ensureLibraries();
 
         const { jsPDF } = window.parent.jspdf;
-        const pdf = new jsPDF("landscape", "pt", "a4");
+
+        const pdf = new jsPDF(
+            "landscape",
+            "pt",
+            "a4"
+        );
 
         const sections = [
             {
-                title: ["L1 Ops Master Performance View", "L1 Ops Master Performance Review"],
-                next: ["POD Performance Command Center", "Leadership Trend View", "Compact Summary", "Export Master View"]
+                title: [
+                    "L1 Ops Master Performance View",
+                    "L1 Ops Master Performance Review"
+                ],
+                next: [
+                    "POD Performance Command Center",
+                    "Leadership Trend View",
+                    "Compact Summary",
+                    "Landscape Export View",
+                    "Export Master View"
+                ]
             },
             {
-                title: ["POD Performance Command Center"],
-                next: ["Leadership Trend View", "Compact Summary", "Export Master View"]
+                title: [
+                    "POD Performance Command Center"
+                ],
+                next: [
+                    "Leadership Trend View",
+                    "Compact Summary",
+                    "Landscape Export View",
+                    "Export Master View"
+                ]
             },
             {
-                title: ["Leadership Trend View", "Trend & POD Comparison"],
-                next: ["Compact Summary", "Summary Tables", "Export Master View"]
+                title: [
+                    "Leadership Trend View",
+                    "Trend & POD Comparison"
+                ],
+                next: [
+                    "Compact Summary",
+                    "Landscape Export View",
+                    "Export Master View"
+                ]
             },
             {
-                title: ["Compact Summary", "Summary Tables"],
-                next: ["Export Master View"]
+                title: [
+                    "Compact Summary",
+                    "Summary Tables"
+                ],
+                next: [
+                    "Landscape Export View",
+                    "Export Master View"
+                ]
             }
         ];
 
         let added = 0;
 
         for (const section of sections) {
-            const canvas = await captureSectionByHeading(section.title, section.next);
+
+            const canvas = await captureSectionByHeading(
+                section.title,
+                section.next
+            );
 
             if (canvas && canvas.height > 50) {
-                if (added > 0) pdf.addPage();
-                await addCanvasAsPDFPage(pdf, canvas);
+
+                if (added > 0) {
+                    pdf.addPage();
+                }
+
+                await addCanvasAsPDFPage(
+                    pdf,
+                    canvas
+                );
+
                 added += 1;
             }
         }
@@ -1703,7 +1807,9 @@ components.html(
             return;
         }
 
-        pdf.save("l1_ops_master_view_sectioned.pdf");
+        pdf.save(
+            "l1_ops_master_view_sectioned.pdf"
+        );
     }
     </script>
     """,
