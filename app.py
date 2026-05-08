@@ -1458,15 +1458,15 @@ with tab4:
 
         st.divider()
 
-            # =====================================================
-    # LANDSCAPE TABLE + TREND VIEW
+        # =====================================================
+    # POD + PEOPLE PERFORMANCE SIDE BY SIDE
     # =====================================================
-    left_export, right_export = st.columns([1.15, 1.1], gap="large")
+    left_table, right_table = st.columns([1.45, 1], gap="large")
 
     # -----------------------------------------------------
-    # POD PERFORMANCE TABLE
+    # POD PERFORMANCE
     # -----------------------------------------------------
-    with left_export:
+    with left_table:
 
         st.subheader("🧾 POD Performance")
 
@@ -1518,29 +1518,33 @@ with tab4:
             styled_export_pod_table,
             use_container_width=True,
             hide_index=True,
-            height=255,
+            height=310,
         )
 
-    
+    # -----------------------------------------------------
+    # PEOPLE PERFORMANCE
+    # -----------------------------------------------------
+    with right_table:
 
-        # -------------------------------
-        # People Performance
-        # -------------------------------
         st.subheader("👥 People Performance")
 
-        try:
-            export_people = people_summary_mv.rename(
-                columns={"Total Contribution": "Total"}
-            )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
+        export_people = people_summary_mv.rename(
+            columns={
+                "Total Contribution": "Total"
+            }
+        )[[
+            "Person",
+            "Sev-2",
+            "Sev-3",
+            "Total"
+        ]].copy()
 
-            st.dataframe(
-                export_people,
-                use_container_width=True,
-                hide_index=True,
-                height=240,
-            )
-        except Exception:
-            st.info("People performance table could not be loaded.")
+        st.dataframe(
+            export_people,
+            use_container_width=True,
+            hide_index=True,
+            height=310,
+        )
         st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
     # =========================================================
