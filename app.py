@@ -1126,227 +1126,217 @@ for idx, row in pod_cards.reset_index(drop=True).iterrows():
                 int(row["Moved to L2"]),
                 f"{row['Moved to L2 %']:.1f}%"
             )
-        # -------------------------------
-        # Charts
-        # -------------------------------
-        if perf1_month_filter == "All":
-            st.markdown("### 📈 Monthly Trend")
-    
-            trend = (
-                pod_view_p1.groupby("Month", as_index=False)[
-                    ["Total Issues", "L1 Resolved", "Moved to L2", "Sev2_Received", "Sev3_Received"]
-                ]
-                .sum()
-            )
-    
-            # Keep only months that actually have data
-            trend = trend[trend["Total Issues"] > 0].copy()
-    
-            # Preserve fiscal month order
-            trend["Month"] = pd.Categorical(
-                trend["Month"].astype(str),
-                categories=MONTH_ORDER,
-                ordered=True,
-            )
-            trend = trend.sort_values("Month")
-            trend["Month"] = trend["Month"].astype(str)
-    
-            trend["L1 Resolved %"] = _p1_safe_pct(
-                trend["L1 Resolved"], trend["Total Issues"]
-            ).round(1)
-    
-            trend["Moved to L2 %"] = _p1_safe_pct(
-                trend["Moved to L2"], trend["Total Issues"]
-            ).round(1)
-    
-            left_chart, right_chart = st.columns(2)
-    
-            with left_chart:
-                st.markdown("**L1 Resolved % Trend**")
-                chart = (
-                    alt.Chart(trend)
-                    .mark_line(point=True)
-                    .encode(
-                        x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
-                        y=alt.Y(
-                            "L1 Resolved %:Q",
-                            title="L1 Resolved %",
-                            scale=alt.Scale(domain=[0, 100]),
-                        ),
-                        tooltip=[
-                            "Month",
-                            alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                            alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
-                            alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
-                        ],
-                    )
-                    .properties(height=320)
-                )
-                st.altair_chart(chart, use_container_width=True)
-    
-            with right_chart:
-                st.markdown("**Moved to L2 % Trend**")
-                chart = (
-                    alt.Chart(trend)
-                    .mark_line(point=True)
-                    .encode(
-                        x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
-                        y=alt.Y(
-                            "Moved to L2 %:Q",
-                            title="Moved to L2 %",
-                            scale=alt.Scale(domain=[0, 100]),
-                        ),
-                        tooltip=[
-                            "Month",
-                            alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                            alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
-                            alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
-                        ],
-                    )
-                    .properties(height=320)
-                )
-                st.altair_chart(chart, use_container_width=True)
-    
-        else:
-            st.markdown(f"### 📊 POD Comparison — {perf1_month_filter}")
-    
-            pod_compare = pod_cards.copy()
-    
-            left_chart, right_chart = st.columns(2)
-    
-            with left_chart:
-                st.markdown("**POD-wise L1 Resolved %**")
-                chart = (
-                    alt.Chart(pod_compare)
-                    .mark_bar()
-                    .encode(
-                        x=alt.X(
-                            "L1 Resolved %:Q",
-                            title="L1 Resolved %",
-                            scale=alt.Scale(domain=[0, 100]),
-                        ),
-                        y=alt.Y("PODS:N", sort="-x", title=None),
-                        tooltip=[
-                            "PODS",
-                            alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                            alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
-                            alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
-                        ],
-                    )
-                    .properties(height=320)
-                )
-                st.altair_chart(chart, use_container_width=True)
-    
-            with right_chart:
-                st.markdown("**POD-wise Moved to L2 %**")
-                chart = (
-                    alt.Chart(pod_compare)
-                    .mark_bar()
-                    .encode(
-                        x=alt.X(
-                            "Moved to L2 %:Q",
-                            title="Moved to L2 %",
-                            scale=alt.Scale(domain=[0, 100]),
-                        ),
-                        y=alt.Y("PODS:N", sort="-x", title=None),
-                        tooltip=[
-                            "PODS",
-                            alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                            alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
-                            alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
-                        ],
-                    )
-                    .properties(height=320)
-                )
-                st.altair_chart(chart, use_container_width=True)
-    
-        st.divider()
-    
-        # -------------------------------
-        # POD Detailed Table
-        # -------------------------------
-        st.markdown("### 🧾 POD Performance — Detailed Table")
-    
-        pod_table = pod_view_p1.copy()
-        pod_table["Month"] = pod_table["Month"].astype(str)
-    
-        pod_display = pod_table[
-            [
-                "Quarter", "Month", "PODS",
-                "Sev2_Received", "Sev2_Contributed",
-                "Sev3_Received", "Sev3_Resolved_RCA",
-                "Total Issues", "L1 Resolved", "L1 Resolved %",
-                "Moved to L2", "Moved to L2 %",
+            # -------------------------------
+    # Charts
+    # -------------------------------
+    if perf1_month_filter == "All":
+        st.markdown("### 📈 Monthly Trend")
+
+        trend = (
+            pod_view_p1.groupby("Month", as_index=False)[
+                ["Total Issues", "L1 Resolved", "Moved to L2", "Sev2_Received", "Sev3_Received"]
             ]
-        ].rename(
-            columns={
-                "PODS": "POD",
-                "Sev2_Received": "Sev-2 Received",
-                "Sev2_Contributed": "Sev-2 L1 Resolved",
-                "Sev3_Received": "Sev-3 Received",
-                "Sev3_Resolved_RCA": "Sev-3 L1 Resolved / RCA",
-            }
+            .sum()
         )
-    
-        percent_cols = ["L1 Resolved %", "Moved to L2 %"]
-    
-        styled_pod_display = pod_display.style.format(
-            {col: "{:.1f}%" for col in percent_cols if col in pod_display.columns}
+
+        # Keep only months that actually have data
+        trend = trend[trend["Total Issues"] > 0].copy()
+
+        # Preserve fiscal month order
+        trend["Month"] = pd.Categorical(
+            trend["Month"].astype(str),
+            categories=MONTH_ORDER,
+            ordered=True,
         )
-    
-        st.dataframe(
-            styled_pod_display,
-            use_container_width=True,
-            hide_index=True,
-        )
-    
-        st.divider()
-    
-        # -------------------------------
-        # POD Summary Table
-        # -------------------------------
-        st.markdown("### 📌 POD Summary")
-    
-        pod_summary = pod_cards.rename(
-            columns={
-                "PODS": "POD",
-                "Sev2_Received": "Sev-2 Received",
-                "Sev3_Received": "Sev-3 Received",
-            }
-        )
-    
-        pod_summary = pod_summary[
-            [
-                "POD",
-                "Total Issues",
-                "Sev-2 Received",
-                "Sev-3 Received",
-                "L1 Resolved",
-                "L1 Resolved %",
-                "Moved to L2",
-                "Moved to L2 %",
-            ]
+        trend = trend.sort_values("Month")
+        trend["Month"] = trend["Month"].astype(str)
+
+        trend["L1 Resolved %"] = _p1_safe_pct(
+            trend["L1 Resolved"], trend["Total Issues"]
+        ).round(1)
+
+        trend["Moved to L2 %"] = _p1_safe_pct(
+            trend["Moved to L2"], trend["Total Issues"]
+        ).round(1)
+
+        left_chart, right_chart = st.columns(2)
+
+        with left_chart:
+            st.markdown("**L1 Resolved % Trend**")
+            chart = (
+                alt.Chart(trend)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y(
+                        "L1 Resolved %:Q",
+                        title="L1 Resolved %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+        with right_chart:
+            st.markdown("**Moved to L2 % Trend**")
+            chart = (
+                alt.Chart(trend)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y(
+                        "Moved to L2 %:Q",
+                        title="Moved to L2 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
+                        alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+    else:
+        st.markdown(f"### 📊 POD Comparison — {perf1_month_filter}")
+
+        pod_compare = pod_cards.copy()
+
+        left_chart, right_chart = st.columns(2)
+
+        with left_chart:
+            st.markdown("**POD-wise L1 Resolved %**")
+            chart = (
+                alt.Chart(pod_compare)
+                .mark_bar()
+                .encode(
+                    x=alt.X(
+                        "L1 Resolved %:Q",
+                        title="L1 Resolved %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 Resolved %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+        with right_chart:
+            st.markdown("**POD-wise Moved to L2 %**")
+            chart = (
+                alt.Chart(pod_compare)
+                .mark_bar()
+                .encode(
+                    x=alt.X(
+                        "Moved to L2 %:Q",
+                        title="Moved to L2 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
+                        alt.Tooltip("Moved to L2 %:Q", title="Moved to L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=320)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+    st.divider()
+
+    # -------------------------------
+    # POD Detailed Table
+    # -------------------------------
+    st.markdown("### 🧾 POD Performance — Detailed Table")
+
+    pod_table = pod_view_p1.copy()
+    pod_table["Month"] = pod_table["Month"].astype(str)
+
+    pod_display = pod_table[
+        [
+            "Quarter", "Month", "PODS",
+            "Sev2_Received", "Sev2_Contributed",
+            "Sev3_Received", "Sev3_Resolved_RCA",
+            "Total Issues", "L1 Resolved", "L1 Resolved %",
+            "Moved to L2", "Moved to L2 %",
         ]
-    
-        styled_pod_summary = pod_summary.style.format(
-            {col: "{:.1f}%" for col in percent_cols if col in pod_summary.columns}
-        )
-    
-        st.dataframe(
-            styled_pod_summary,
-            use_container_width=True,
-            hide_index=True,
-        )
-    
-        # IMPORTANT:
-        # Do not add another Monthly Trend block after this point.
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    ].rename(
+        columns={
+            "PODS": "POD",
+            "Sev2_Received": "Sev-2 Received",
+            "Sev2_Contributed": "Sev-2 L1 Resolved",
+            "Sev3_Received": "Sev-3 Received",
+            "Sev3_Resolved_RCA": "Sev-3 L1 Resolved / RCA",
+        }
+    )
+
+    percent_cols = ["L1 Resolved %", "Moved to L2 %"]
+
+    styled_pod_display = pod_display.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in pod_display.columns}
+    )
+
+    st.dataframe(
+        styled_pod_display,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.divider()
+
+    # -------------------------------
+    # POD Summary Table
+    # -------------------------------
+    st.markdown("### 📌 POD Summary")
+
+    pod_summary = pod_cards.rename(
+        columns={
+            "PODS": "POD",
+            "Sev2_Received": "Sev-2 Received",
+            "Sev3_Received": "Sev-3 Received",
+        }
+    )
+
+    pod_summary = pod_summary[
+        [
+            "POD",
+            "Total Issues",
+            "Sev-2 Received",
+            "Sev-3 Received",
+            "L1 Resolved",
+            "L1 Resolved %",
+            "Moved to L2",
+            "Moved to L2 %",
+        ]
+    ]
+
+    styled_pod_summary = pod_summary.style.format(
+        {col: "{:.1f}%" for col in percent_cols if col in pod_summary.columns}
+    )
+
+    st.dataframe(
+        styled_pod_summary,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    # IMPORTANT:
+    # Do not add another Monthly Trend block after this point.
