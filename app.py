@@ -1461,7 +1461,7 @@ with tab4:
         # =====================================================
     # POD + PEOPLE PERFORMANCE SIDE BY SIDE
     # =====================================================
-    left_table, right_table = st.columns([1.45, 1], gap="large")
+    left_table, right_table = st.columns([1.25, 1], gap="large")
 
     # -----------------------------------------------------
     # POD PERFORMANCE
@@ -1534,8 +1534,8 @@ with tab4:
             }
         )[[
             "Person",
-            "Sev-2",
-            "Sev-3",
+            "Sev-2_Resolved",
+            "Sev-3_Resolved",
             "Total"
         ]].copy()
 
