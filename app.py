@@ -2462,17 +2462,10 @@ with tab3:
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
     
-# ---------- Tab 4: L1 Master View ----------
+# ---------- Tab 5: L1 Master View ----------
 with tab4:
     import altair as alt
     import streamlit.components.v1 as components
-
-    st.markdown(
-        """
-        <div id="l1-master-export-root">
-        """,
-        unsafe_allow_html=True,
-    )
 
     st.markdown(f"# 🌟 L1 Ops Master Performance View — {selected_year}")
     st.caption(
@@ -2565,7 +2558,6 @@ with tab4:
                 padding:16px;
                 background:linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
                 min-height:120px;
-                box-shadow:0 8px 20px rgba(0,0,0,0.18);
             ">
                 <div style="font-size:13px; color:#AEB6C2; font-weight:800;">{icon} {title}</div>
                 <div style="font-size:36px; font-weight:900; color:{color}; margin-top:6px;">{value}</div>
@@ -2576,7 +2568,7 @@ with tab4:
         )
 
     # -------------------------------
-    # Load data
+    # Load Data
     # -------------------------------
     pod_raw_mv = load_perf_csv(PERF_POD_FILE, f"Upload {PERF_POD_FILE}")
     pod_all_mv = _mv_normalize_pod_perf(pod_raw_mv)
@@ -2591,6 +2583,9 @@ with tab4:
         if m in pod_year_mv["Month"].astype(str).unique().tolist()
     ]
 
+    # -------------------------------
+    # Filters
+    # -------------------------------
     with st.container(border=True):
         f1, f2 = st.columns([1, 1])
 
@@ -2636,14 +2631,17 @@ with tab4:
 
     l1_pct = round((l1_total / total_issues * 100), 1) if total_issues else 0
     l2_pct = round((l2_total / total_issues * 100), 1) if total_issues else 0
-    active_pods = mv_view["PODS"].nunique()
 
     pod_master = (
         mv_view.groupby("PODS", as_index=False)[
             [
-                "Sev2_Received", "Sev2_Contributed",
-                "Sev3_Received", "Sev3_Resolved_RCA",
-                "Total Issues", "L1 Resolved", "Moved to L2",
+                "Sev2_Received",
+                "Sev2_Contributed",
+                "Sev3_Received",
+                "Sev3_Resolved_RCA",
+                "Total Issues",
+                "L1 Resolved",
+                "Moved to L2",
             ]
         ]
         .sum()
@@ -2665,7 +2663,7 @@ with tab4:
     best_pod = pod_master.iloc[0]["PODS"]
 
     # -------------------------------
-    # Hero banner
+    # Impact Banner
     # -------------------------------
     st.markdown(
         f"""
@@ -2675,16 +2673,16 @@ with tab4:
             padding:24px 30px;
             margin:18px 0 16px 0;
             border:1px solid rgba(74,222,128,0.35);
-            box-shadow:0 10px 28px rgba(0,0,0,0.28);
         ">
             <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
                 💡 L1 Impact Created — {report_scope}
             </div>
             <div style="font-size:44px;color:white;font-weight:950;margin-top:6px;line-height:1.05;">
-                {l1_pct}% resolved within L1
+                {l1_pct:.1f}% resolved within L1
             </div>
             <div style="font-size:16px;color:#dcfce7;margin-top:8px;font-weight:600;">
-                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducing L2 dependency and saving escalation bandwidth.
+                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
+                reducing L2 dependency and saving escalation bandwidth.
             </div>
         </div>
         """,
@@ -2692,16 +2690,16 @@ with tab4:
     )
 
     # -------------------------------
-    # KPI cards
+    # KPI Cards
     # -------------------------------
     k1, k2, k3, k4, k5 = st.columns(5)
 
     with k1:
         _mv_card("TOTAL ISSUES", total_issues, "Sev 2 + Sev 3", "#ffffff", "🚨")
     with k2:
-        _mv_card("L1 RESOLVED", l1_total, f"{l1_pct}% within L1", "#4ade80", "✅")
+        _mv_card("L1 RESOLVED", l1_total, f"{l1_pct:.1f}% within L1", "#4ade80", "✅")
     with k3:
-        _mv_card("MOVED TO L2", l2_total, f"{l2_pct}% escalated", "#fbbf24", "⬆️")
+        _mv_card("MOVED TO L2", l2_total, f"{l2_pct:.1f}% escalated", "#fbbf24", "⬆️")
     with k4:
         _mv_card("SEVERITY SPLIT", f"{sev2_total} / {sev3_total}", "Sev 2 / Sev 3", "#93c5fd", "📊")
     with k5:
@@ -2714,19 +2712,16 @@ with tab4:
     # -------------------------------
     st.markdown("## 🧩 POD Performance Command Center")
     st.caption("Issue volume, severity split, L1 resolution efficiency, and L2 dependency by POD.")
-    
+
     pod_cols = st.columns(5)
-    
+
     for idx, row in pod_master.reset_index(drop=True).iterrows():
         resolve_pct = float(row["L1 Resolved %"])
         l2_pct_local = float(row["Moved to L2 %"])
-    
         pod_name = str(row["PODS"])
-    
+
         with pod_cols[idx % 5]:
             with st.container(border=True):
-    
-                # POD title
                 st.markdown(
                     f"""
                     <div style="
@@ -2736,7 +2731,6 @@ with tab4:
                         line-height:1.15;
                         color:white;
                         margin-bottom:8px;
-                        word-break:normal;
                         overflow-wrap:break-word;
                     ">
                         🧩 {pod_name}
@@ -2744,15 +2738,15 @@ with tab4:
                     """,
                     unsafe_allow_html=True,
                 )
-    
+
                 st.metric("Total Issues", int(row["Total Issues"]))
-    
+
                 sev1, sev2 = st.columns(2)
                 with sev1:
                     st.metric("Sev 2", int(row["Sev2_Received"]))
                 with sev2:
                     st.metric("Sev 3", int(row["Sev3_Received"]))
-    
+
                 st.markdown("**✅ L1 Resolve Rate**")
                 st.progress(min(resolve_pct / 100, 1.0))
                 st.markdown(
@@ -2766,7 +2760,7 @@ with tab4:
                     """,
                     unsafe_allow_html=True,
                 )
-    
+
                 st.markdown("**⬆️ Moved to L2**")
                 st.progress(min(l2_pct_local / 100, 1.0))
                 st.markdown(
@@ -2780,155 +2774,77 @@ with tab4:
                     """,
                     unsafe_allow_html=True,
                 )
-    
-    # -------------------------------
-    # Charts
-    # -------------------------------
-    st.markdown("## 📈 Leadership Trend View")
-
-    if master_month_filter == "All":
-        trend_mv = (
-            mv_view.groupby("Month", as_index=False)[
-                ["Total Issues", "L1 Resolved", "Moved to L2"]
-            ]
-            .sum()
-        )
-
-        trend_mv = trend_mv[trend_mv["Total Issues"] > 0].copy()
-
-        trend_mv["Month"] = pd.Categorical(
-            trend_mv["Month"].astype(str),
-            categories=MONTH_ORDER,
-            ordered=True,
-        )
-        trend_mv = trend_mv.sort_values("Month")
-        trend_mv["Month"] = trend_mv["Month"].astype(str)
-
-        trend_mv["L1 Resolved %"] = _mv_safe_pct(
-            trend_mv["L1 Resolved"], trend_mv["Total Issues"]
-        ).round(1)
-
-        trend_mv["Moved to L2 %"] = _mv_safe_pct(
-            trend_mv["Moved to L2"], trend_mv["Total Issues"]
-        ).round(1)
-
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            st.markdown("**✅ L1 Resolved % Trend**")
-            chart = (
-                alt.Chart(trend_mv)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
-                    y=alt.Y("L1 Resolved %:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-                    tooltip=[
-                        "Month",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-        with c2:
-            st.markdown("**⬆️ Moved to L2 % Trend**")
-            chart = (
-                alt.Chart(trend_mv)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
-                    y=alt.Y("Moved to L2 %:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-                    tooltip=[
-                        "Month",
-                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
-                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-        with c3:
-            st.markdown("**🏆 POD Resolve % Ranking**")
-            chart = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
-                .encode(
-                    x=alt.X("L1 Resolved %:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-    else:
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-            st.markdown("**🏆 POD L1 Resolved %**")
-            chart = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
-                .encode(
-                    x=alt.X("L1 Resolved %:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-        with c2:
-            st.markdown("**⬆️ POD Moved to L2 %**")
-            chart = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
-                .encode(
-                    x=alt.X("Moved to L2 %:Q", title="%", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-        with c3:
-            st.markdown("**🚨 POD Total Issues**")
-            chart = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
-                .encode(
-                    x=alt.X("Total Issues:Q", title="Issues"),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                    ],
-                )
-                .properties(height=260)
-            )
-            st.altair_chart(chart, use_container_width=True)
 
     st.divider()
 
     # -------------------------------
-    # Summary tables
+    # Leadership Trend View
+    # -------------------------------
+    st.markdown("## 📈 Leadership Trend View")
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.markdown("**🏆 POD L1 Resolved %**")
+        chart = (
+            alt.Chart(pod_master)
+            .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+            .encode(
+                x=alt.X("L1 Resolved %:Q", title="L1 %", scale=alt.Scale(domain=[0, 100])),
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                tooltip=[
+                    "PODS",
+                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                ],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+    with c2:
+        st.markdown("**🚨 POD Total Issues**")
+        chart = (
+            alt.Chart(pod_master)
+            .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+            .encode(
+                x=alt.X("Total Issues:Q", title="Issues"),
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                tooltip=["PODS", alt.Tooltip("Total Issues:Q", title="Total Issues")],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+    with c3:
+        st.markdown("**📊 Severity Split by POD**")
+        sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
+            id_vars="PODS",
+            value_vars=["Sev2_Received", "Sev3_Received"],
+            var_name="Severity",
+            value_name="Count",
+        )
+        sev_long["Severity"] = sev_long["Severity"].replace(
+            {"Sev2_Received": "Sev 2", "Sev3_Received": "Sev 3"}
+        )
+
+        chart = (
+            alt.Chart(sev_long)
+            .mark_bar()
+            .encode(
+                x=alt.X("Count:Q", title="Issues"),
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                color=alt.Color("Severity:N", title="Severity"),
+                tooltip=["PODS", "Severity", "Count"],
+            )
+            .properties(height=260)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+    st.divider()
+
+    # -------------------------------
+    # Compact Summary
     # -------------------------------
     st.markdown("## 📋 Compact Summary")
 
@@ -3014,589 +2930,434 @@ with tab4:
                     use_container_width=True,
                     hide_index=True,
                 )
+
         except Exception:
             st.info("People performance table could not be loaded for Master View.")
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.divider()
-
     # =========================================================
-# LANDSCAPE EXPORT VIEW FOR PNG
-# =========================================================
-with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
+    # LANDSCAPE EXPORT VIEW FOR PNG
+    # =========================================================
+    with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
 
-    # ---------- START MARKER ----------
-    st.markdown(
-        '<div id="landscape-export-start"></div>',
-        unsafe_allow_html=True,
-    )
+        st.markdown('<div id="landscape-export-start"></div>', unsafe_allow_html=True)
 
-    export_month_label = "All / YTD" if master_month_filter == "All" else master_month_filter.title()
-    impact_month_label = "YTD" if master_month_filter == "All" else master_month_filter.title()
+        export_month_label = "All / YTD" if master_month_filter == "All" else master_month_filter.title()
+        impact_month_label = "YTD" if master_month_filter == "All" else master_month_filter.title()
 
-    st.markdown(
-        f"""
-        <div style="padding-top:10px; padding-bottom:10px;">
-            <h1 style="font-size:52px; margin-bottom:8px;">
-                🌟 L1 Ops Master Performance View — {selected_year}
-            </h1>
-
-            <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                Export view optimized for leadership snapshot |
-                Month: <b>{export_month_label}</b>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # =====================================================
-    # IMPACT BANNER
-    # =====================================================
-    st.markdown(
-        f"""
-        <div style="
-            background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-            padding:28px;
-            border-radius:18px;
-            border:1px solid rgba(74,222,128,0.35);
-            margin-bottom:25px;
-        ">
-            <div style="font-size:24px; font-weight:800; color:#bbf7d0;">
-                💡 L1 Impact Created — {impact_month_label}
+        st.markdown(
+            f"""
+            <div style="padding-top:10px; padding-bottom:10px;">
+                <h1 style="font-size:52px; margin-bottom:8px; font-weight:900;">
+                    🌟 L1 Ops Master Performance View — {selected_year}
+                </h1>
+                <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
+                    Export view optimized for leadership snapshot |
+                    Month: <b>{export_month_label}</b>
+                </div>
             </div>
 
             <div style="
-                font-size:58px;
-                font-weight:950;
-                margin-top:10px;
-                line-height:1;
-                color:white;
+                background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+                padding:28px;
+                border-radius:18px;
+                border:1px solid rgba(74,222,128,0.35);
+                margin-bottom:25px;
             ">
-                {l1_pct:.1f}% resolved within L1
+                <div style="font-size:24px; font-weight:800; color:#bbf7d0;">
+                    💡 L1 Impact Created — {impact_month_label}
+                </div>
+                <div style="font-size:58px; font-weight:950; margin-top:10px; line-height:1; color:white;">
+                    {l1_pct:.1f}% resolved within L1
+                </div>
+                <div style="margin-top:15px; font-size:22px; color:#dcfce7; font-weight:650;">
+                    L1 Ops resolved {l1_total} of {total_issues} total issues,
+                    reducing L2 dependency and saving escalation bandwidth.
+                </div>
             </div>
-
-            <div style="
-                margin-top:15px;
-                font-size:22px;
-                color:#dcfce7;
-                font-weight:650;
-            ">
-                L1 Ops resolved {l1_total} of {total_issues} total issues,
-                reducing L2 dependency and saving escalation bandwidth.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # =====================================================
-    # KPI ROW
-    # =====================================================
-    k1, k2, k3, k4, k5 = st.columns(5)
-
-    with k1:
-        st.metric("🚨 Total Issues", f"{total_issues}")
-
-    with k2:
-        st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
-
-    with k3:
-        st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
-
-    with k4:
-        st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
-
-    with k5:
-        best_pod_export = (
-            pod_master.sort_values("L1 Resolved %", ascending=False)
-            .iloc[0]["PODS"]
-        )
-        st.metric("🏅 Best POD", best_pod_export)
-
-    st.divider()
-
-    # =====================================================
-    # TABLE + TREND
-    # =====================================================
-    left_export, right_export = st.columns([1.5, 1])
-
-    with left_export:
-        st.subheader("🧩 POD Performance")
-
-        export_pod_table = pod_master.rename(
-            columns={
-                "PODS": "POD",
-                "Sev2_Received": "Sev-2 Received",
-                "Sev3_Received": "Sev-3 Received",
-            }
-        )[
-            [
-                "POD",
-                "Total Issues",
-                "Sev-2 Received",
-                "Sev-3 Received",
-                "L1 Resolved",
-                "L1 Resolved %",
-                "Moved to L2",
-                "Moved to L2 %",
-            ]
-        ].copy()
-
-        styled_export_pod_table = export_pod_table.style.format(
-            {
-                "L1 Resolved %": "{:.1f}%",
-                "Moved to L2 %": "{:.1f}%",
-            }
+            """,
+            unsafe_allow_html=True,
         )
 
-        st.dataframe(
-            styled_export_pod_table,
-            use_container_width=True,
-            hide_index=True,
-            height=320,
-        )
+        k1, k2, k3, k4, k5 = st.columns(5)
 
-    with right_export:
-        st.subheader("📈 Trend View")
+        with k1:
+            st.metric("🚨 Total Issues", f"{total_issues}")
+        with k2:
+            st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
+        with k3:
+            st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
+        with k4:
+            st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
+        with k5:
+            st.metric("🏅 Best POD", best_pod)
 
-        trend_chart_export = (
-            alt.Chart(pod_master)
-            .mark_bar()
-            .encode(
-                y=alt.Y("PODS:N", sort="-x", title=None),
-                x=alt.X(
-                    "L1 Resolved %:Q",
-                    scale=alt.Scale(domain=[0, 100]),
-                    title="L1 %",
-                ),
-                tooltip=[
-                    "PODS",
-                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                ],
-            )
-            .properties(height=280)
-        )
+        st.divider()
 
-        st.altair_chart(trend_chart_export, use_container_width=True)
+        left_export, right_export = st.columns([1.5, 1])
 
-    # =====================================================
-    # POD RANKING + PEOPLE TABLE
-    # =====================================================
-    left_bottom, right_bottom = st.columns([1, 1])
+        with left_export:
+            st.subheader("🧩 POD Performance")
 
-    with left_bottom:
-        st.subheader("🏆 POD Resolve Ranking")
-
-        ranking_chart = (
-            alt.Chart(
-                pod_master.sort_values("L1 Resolved %", ascending=False)
-            )
-            .mark_bar()
-            .encode(
-                y=alt.Y("PODS:N", sort="-x", title=None),
-                x=alt.X(
-                    "L1 Resolved %:Q",
-                    scale=alt.Scale(domain=[0, 100]),
-                    title="L1 Resolved %",
-                ),
-                tooltip=[
-                    "PODS",
-                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                ],
-            )
-            .properties(height=260)
-        )
-
-        st.altair_chart(ranking_chart, use_container_width=True)
-
-    with right_bottom:
-        st.subheader("👥 People Performance")
-
-        try:
-            people_raw_export = load_perf_csv(PERF_PEOPLE_FILE, f"Upload {PERF_PEOPLE_FILE}")
-            people_all_export = normalize_people_perf(people_raw_export)
-            people_year_export = people_all_export[
-                people_all_export["Year"] == selected_year
+            export_pod_table = pod_master.rename(
+                columns={
+                    "PODS": "POD",
+                    "Sev2_Received": "Sev-2 Received",
+                    "Sev3_Received": "Sev-3 Received",
+                }
+            )[
+                [
+                    "POD",
+                    "Total Issues",
+                    "Sev-2 Received",
+                    "Sev-3 Received",
+                    "L1 Resolved",
+                    "L1 Resolved %",
+                    "Moved to L2",
+                    "Moved to L2 %",
+                ]
             ].copy()
 
-            if master_month_filter != "All":
-                people_year_export = people_year_export[
-                    people_year_export["Month"].astype(str) == master_month_filter
-                ]
+            styled_export_pod_table = export_pod_table.style.format(
+                {
+                    "L1 Resolved %": "{:.1f}%",
+                    "Moved to L2 %": "{:.1f}%",
+                }
+            )
 
-            if people_year_export.empty:
-                st.info("No people performance rows for selected filter.")
-            else:
-                export_people = (
-                    people_year_export.groupby("Name", as_index=False)[
-                        ["Sev2_Contributed", "Sev3_Resolved_RCA"]
-                    ]
-                    .sum()
+            st.dataframe(
+                styled_export_pod_table,
+                use_container_width=True,
+                hide_index=True,
+                height=320,
+            )
+
+        with right_export:
+            st.subheader("📈 Trend View")
+
+            trend_chart_export = (
+                alt.Chart(pod_master)
+                .mark_bar()
+                .encode(
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    x=alt.X("L1 Resolved %:Q", scale=alt.Scale(domain=[0, 100]), title="L1 %"),
+                    tooltip=["PODS", alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f")],
                 )
+                .properties(height=280)
+            )
 
-                export_people["Total"] = (
-                    export_people["Sev2_Contributed"]
-                    + export_people["Sev3_Resolved_RCA"]
+            st.altair_chart(trend_chart_export, use_container_width=True)
+
+        left_bottom, right_bottom = st.columns([1, 1])
+
+        with left_bottom:
+            st.subheader("🏆 POD Resolve Ranking")
+
+            ranking_chart = (
+                alt.Chart(pod_master.sort_values("L1 Resolved %", ascending=False))
+                .mark_bar()
+                .encode(
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    x=alt.X("L1 Resolved %:Q", scale=alt.Scale(domain=[0, 100]), title="L1 Resolved %"),
+                    tooltip=["PODS", alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f")],
                 )
+                .properties(height=260)
+            )
 
-                export_people = export_people.sort_values(
-                    "Total",
-                    ascending=False,
-                ).head(6)
+            st.altair_chart(ranking_chart, use_container_width=True)
 
-                export_people = export_people.rename(
-                    columns={
-                        "Name": "Person",
-                        "Sev2_Contributed": "Sev-2",
-                        "Sev3_Resolved_RCA": "Sev-3",
-                    }
-                )
+        with right_bottom:
+            st.subheader("👥 People Performance")
+
+            try:
+                export_people = people_summary_mv.rename(
+                    columns={"Total Contribution": "Total"}
+                )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
 
                 st.dataframe(
-                    export_people[["Person", "Sev-2", "Sev-3", "Total"]],
+                    export_people,
                     use_container_width=True,
                     hide_index=True,
                     height=260,
                 )
+            except Exception:
+                st.info("People performance table could not be loaded.")
 
-        except Exception:
-            st.info("People performance table could not be loaded.")
+        st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
-    # ---------- END MARKER ----------
-    st.markdown(
-        '<div id="landscape-export-end"></div>',
-        unsafe_allow_html=True,
-    )
+    # =========================================================
+    # EXPORT SECTION
+    # =========================================================
+    st.divider()
+    st.subheader("⬇️ Export Master View")
 
+    components.html(
+        """
+        <div style="display:flex; gap:10px;">
+            <button onclick="exportMasterPNG()" style="
+                padding:10px 16px;
+                border-radius:8px;
+                border:1px solid #888;
+                cursor:pointer;
+                font-weight:700;
+                background:#111827;
+                color:white;
+            ">⬇️ Export PNG</button>
 
-# =========================================================
-# EXPORT SECTION
-# =========================================================
-st.divider()
-st.subheader("⬇️ Export Master View")
+            <button onclick="exportMasterPDF()" style="
+                padding:10px 16px;
+                border-radius:8px;
+                border:1px solid #888;
+                cursor:pointer;
+                font-weight:700;
+                background:#111827;
+                color:white;
+            ">⬇️ Export PDF</button>
+        </div>
 
-components.html(
-    """
-    <div style="display:flex; gap:10px;">
-        <button onclick="exportMasterPNG()" style="
-            padding:10px 16px;
-            border-radius:8px;
-            border:1px solid #888;
-            cursor:pointer;
-            font-weight:700;
-            background:#111827;
-            color:white;
-        ">⬇️ Export PNG</button>
+        <script>
+        async function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                if ([...window.parent.document.scripts].some(s => s.src === src)) {
+                    resolve();
+                    return;
+                }
 
-        <button onclick="exportMasterPDF()" style="
-            padding:10px 16px;
-            border-radius:8px;
-            border:1px solid #888;
-            cursor:pointer;
-            font-weight:700;
-            background:#111827;
-            color:white;
-        ">⬇️ Export PDF</button>
-    </div>
+                const script = window.parent.document.createElement("script");
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                window.parent.document.head.appendChild(script);
+            });
+        }
 
-    <script>
-    async function loadScript(src) {
-        return new Promise((resolve, reject) => {
-            if ([...window.parent.document.scripts].some(s => s.src === src)) {
-                resolve();
+        async function ensureLibraries() {
+            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+        }
+
+        function getMainContainer() {
+            const doc = window.parent.document;
+
+            return (
+                doc.querySelector('[data-testid="stMainBlockContainer"]') ||
+                doc.querySelector('[data-testid="stAppViewContainer"]') ||
+                doc.querySelector('.main') ||
+                doc.body
+            );
+        }
+
+        async function captureElementRegion(element, startY, endY) {
+            const oldScroll = window.parent.scrollY;
+            window.parent.scrollTo(0, 0);
+
+            await new Promise(r => setTimeout(r, 800));
+
+            const fullCanvas = await window.parent.html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: "#0e1117",
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            window.parent.scrollTo(0, oldScroll);
+
+            const scale = 2;
+            const cropY = Math.max(0, startY * scale);
+            const cropHeight = Math.min((endY - startY) * scale, fullCanvas.height - cropY);
+
+            const cropCanvas = window.parent.document.createElement("canvas");
+            cropCanvas.width = fullCanvas.width;
+            cropCanvas.height = cropHeight;
+
+            const ctx = cropCanvas.getContext("2d");
+
+            ctx.drawImage(
+                fullCanvas,
+                0,
+                cropY,
+                fullCanvas.width,
+                cropHeight,
+                0,
+                0,
+                fullCanvas.width,
+                cropHeight
+            );
+
+            return cropCanvas;
+        }
+
+        async function exportMasterPNG() {
+            await ensureLibraries();
+
+            const doc = window.parent.document;
+            const main = getMainContainer();
+
+            const allNodes = [...doc.querySelectorAll("*")];
+
+            const expanderNode = allNodes.find(el =>
+                el.innerText &&
+                el.innerText.includes("Landscape Export View for PNG")
+            );
+
+            if (expanderNode) {
+                const clickable =
+                    expanderNode.closest("button") ||
+                    expanderNode.querySelector("button") ||
+                    expanderNode;
+
+                const ariaExpanded = clickable.getAttribute("aria-expanded");
+
+                if (ariaExpanded === "false") {
+                    clickable.click();
+                    await new Promise(r => setTimeout(r, 1800));
+                }
+            }
+
+            const startMarker = doc.getElementById("landscape-export-start");
+            const endMarker = doc.getElementById("landscape-export-end");
+
+            if (!startMarker || !endMarker) {
+                alert("Could not find Landscape Export markers.");
                 return;
             }
 
-            const script = window.parent.document.createElement("script");
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            window.parent.document.head.appendChild(script);
-        });
-    }
+            const mainRect = main.getBoundingClientRect();
+            const startRect = startMarker.getBoundingClientRect();
+            const endRect = endMarker.getBoundingClientRect();
 
-    async function ensureLibraries() {
-        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-    }
+            const startY = Math.max(0, startRect.top - mainRect.top - 10);
+            const endY = Math.max(startY + 400, endRect.bottom - mainRect.top + 10);
 
-    function getMainContainer() {
-        const doc = window.parent.document;
+            const canvas = await captureElementRegion(main, startY, endY);
 
-        return (
-            doc.querySelector('[data-testid="stMainBlockContainer"]') ||
-            doc.querySelector('[data-testid="stAppViewContainer"]') ||
-            doc.querySelector('.main') ||
-            doc.body
-        );
-    }
-
-    async function captureElementRegion(element, startY, endY) {
-        const oldScroll = window.parent.scrollY;
-        window.parent.scrollTo(0, 0);
-
-        await new Promise(r => setTimeout(r, 800));
-
-        const fullCanvas = await window.parent.html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#0e1117",
-            width: element.scrollWidth,
-            height: element.scrollHeight,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight,
-            scrollX: 0,
-            scrollY: 0
-        });
-
-        window.parent.scrollTo(0, oldScroll);
-
-        const scale = 2;
-        const cropY = Math.max(0, startY * scale);
-        const cropHeight = Math.min(
-            (endY - startY) * scale,
-            fullCanvas.height - cropY
-        );
-
-        const cropCanvas = window.parent.document.createElement("canvas");
-        cropCanvas.width = fullCanvas.width;
-        cropCanvas.height = cropHeight;
-
-        const ctx = cropCanvas.getContext("2d");
-
-        ctx.drawImage(
-            fullCanvas,
-            0,
-            cropY,
-            fullCanvas.width,
-            cropHeight,
-            0,
-            0,
-            fullCanvas.width,
-            cropHeight
-        );
-
-        return cropCanvas;
-    }
-
-    async function exportMasterPNG() {
-        await ensureLibraries();
-
-        const doc = window.parent.document;
-        const main = getMainContainer();
-
-        // Open the landscape expander first
-        const allNodes = [...doc.querySelectorAll("*")];
-
-        const expanderNode = allNodes.find(el =>
-            el.innerText &&
-            el.innerText.includes("Landscape Export View for PNG")
-        );
-
-        if (expanderNode) {
-            const clickable =
-                expanderNode.closest("button") ||
-                expanderNode.querySelector("button") ||
-                expanderNode;
-
-            const ariaExpanded = clickable.getAttribute("aria-expanded");
-
-            if (ariaExpanded === "false") {
-                clickable.click();
-                await new Promise(r => setTimeout(r, 1800));
-            }
+            const link = window.parent.document.createElement("a");
+            link.download = "l1_ops_master_view_landscape.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
         }
 
-        const startMarker = doc.getElementById("landscape-export-start");
-        const endMarker = doc.getElementById("landscape-export-end");
+        async function addCanvasAsPDFPage(pdf, canvas) {
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
 
-        if (!startMarker || !endMarker) {
-            alert("Could not find Landscape Export markers.");
-            return;
+            const margin = 24;
+            const maxWidth = pageWidth - (margin * 2);
+            const maxHeight = pageHeight - (margin * 2);
+
+            const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+
+            const imgWidth = canvas.width * ratio;
+            const imgHeight = canvas.height * ratio;
+
+            const x = (pageWidth - imgWidth) / 2;
+            const y = (pageHeight - imgHeight) / 2;
+
+            pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, imgWidth, imgHeight);
         }
 
-        const mainRect = main.getBoundingClientRect();
-        const startRect = startMarker.getBoundingClientRect();
-        const endRect = endMarker.getBoundingClientRect();
+        async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
+            const doc = window.parent.document;
+            const main = getMainContainer();
+            const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
 
-        const startY = Math.max(0, startRect.top - mainRect.top - 10);
-        const endY = Math.max(startY + 400, endRect.bottom - mainRect.top + 10);
-
-        const canvas = await captureElementRegion(main, startY, endY);
-
-        const link = window.parent.document.createElement("a");
-        link.download = "l1_ops_master_view_landscape.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }
-
-    function findHeadingByText(textOptions) {
-        const doc = window.parent.document;
-        const headings = [...doc.querySelectorAll("h1, h2, h3")];
-
-        return headings.find(el =>
-            el.innerText &&
-            textOptions.some(t => el.innerText.includes(t))
-        );
-    }
-
-    async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
-        const doc = window.parent.document;
-        const main = getMainContainer();
-
-        const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
-
-        const startHeading = allHeadings.find(el =>
-            el.innerText &&
-            headingTexts.some(t => el.innerText.includes(t))
-        );
-
-        if (!startHeading) return null;
-
-        let endHeading = null;
-
-        for (const h of allHeadings) {
-            if (!h.innerText) continue;
-
-            const isAfter =
-                h.getBoundingClientRect().top >
-                startHeading.getBoundingClientRect().top;
-
-            const matchesNext =
-                nextHeadingTexts.some(t => h.innerText.includes(t));
-
-            if (isAfter && matchesNext) {
-                endHeading = h;
-                break;
-            }
-        }
-
-        const mainRect = main.getBoundingClientRect();
-        const startRect = startHeading.getBoundingClientRect();
-
-        const startY = Math.max(0, startRect.top - mainRect.top - 18);
-
-        let endY;
-
-        if (endHeading) {
-            endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
-        } else {
-            const exportHeading = allHeadings.find(el =>
-                el.innerText && el.innerText.includes("Export Master View")
+            const startHeading = allHeadings.find(el =>
+                el.innerText &&
+                headingTexts.some(t => el.innerText.includes(t))
             );
 
-            endY = exportHeading
-                ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
-                : main.scrollHeight;
-        }
+            if (!startHeading) return null;
 
-        return await captureElementRegion(main, startY, endY);
-    }
+            let endHeading = null;
 
-    async function addCanvasAsPDFPage(pdf, canvas) {
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+            for (const h of allHeadings) {
+                if (!h.innerText) continue;
 
-        const margin = 24;
-        const maxWidth = pageWidth - (margin * 2);
-        const maxHeight = pageHeight - (margin * 2);
+                const isAfter =
+                    h.getBoundingClientRect().top >
+                    startHeading.getBoundingClientRect().top;
 
-        const ratio = Math.min(
-            maxWidth / canvas.width,
-            maxHeight / canvas.height
-        );
+                const matchesNext =
+                    nextHeadingTexts.some(t => h.innerText.includes(t));
 
-        const imgWidth = canvas.width * ratio;
-        const imgHeight = canvas.height * ratio;
-
-        const x = (pageWidth - imgWidth) / 2;
-        const y = (pageHeight - imgHeight) / 2;
-
-        pdf.addImage(
-            canvas.toDataURL("image/png"),
-            "PNG",
-            x,
-            y,
-            imgWidth,
-            imgHeight
-        );
-    }
-
-    async function exportMasterPDF() {
-        await ensureLibraries();
-
-        const { jsPDF } = window.parent.jspdf;
-        const pdf = new jsPDF("landscape", "pt", "a4");
-
-        const sections = [
-            {
-                title: [
-                    "L1 Ops Master Performance View",
-                    "L1 Ops Master Performance Review"
-                ],
-                next: [
-                    "POD Performance Command Center",
-                    "Leadership Trend View",
-                    "Compact Summary",
-                    "Landscape Export View for PNG",
-                    "Export Master View"
-                ]
-            },
-            {
-                title: ["POD Performance Command Center"],
-                next: [
-                    "Leadership Trend View",
-                    "Compact Summary",
-                    "Landscape Export View for PNG",
-                    "Export Master View"
-                ]
-            },
-            {
-                title: [
-                    "Leadership Trend View",
-                    "Trend & POD Comparison"
-                ],
-                next: [
-                    "Compact Summary",
-                    "Landscape Export View for PNG",
-                    "Export Master View"
-                ]
-            },
-            {
-                title: [
-                    "Compact Summary",
-                    "Summary Tables"
-                ],
-                next: [
-                    "Landscape Export View for PNG",
-                    "Export Master View"
-                ]
+                if (isAfter && matchesNext) {
+                    endHeading = h;
+                    break;
+                }
             }
-        ];
 
-        let added = 0;
+            const mainRect = main.getBoundingClientRect();
+            const startRect = startHeading.getBoundingClientRect();
 
-        for (const section of sections) {
-            const canvas = await captureSectionByHeading(section.title, section.next);
+            const startY = Math.max(0, startRect.top - mainRect.top - 18);
 
-            if (canvas && canvas.height > 50) {
-                if (added > 0) pdf.addPage();
-                await addCanvasAsPDFPage(pdf, canvas);
-                added += 1;
+            let endY;
+
+            if (endHeading) {
+                endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
+            } else {
+                const exportHeading = allHeadings.find(el =>
+                    el.innerText && el.innerText.includes("Export Master View")
+                );
+
+                endY = exportHeading
+                    ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
+                    : main.scrollHeight;
             }
+
+            return await captureElementRegion(main, startY, endY);
         }
 
-        if (added === 0) {
-            alert("No sections found to export.");
-            return;
-        }
+        async function exportMasterPDF() {
+            await ensureLibraries();
 
-        pdf.save("l1_ops_master_view_sectioned.pdf");
-    }
-    </script>
-    """,
-    height=70,
-)
+            const { jsPDF } = window.parent.jspdf;
+            const pdf = new jsPDF("landscape", "pt", "a4");
+
+            const sections = [
+                {
+                    title: ["L1 Ops Master Performance View"],
+                    next: ["POD Performance Command Center", "Leadership Trend View", "Compact Summary", "Landscape Export View for PNG", "Export Master View"]
+                },
+                {
+                    title: ["POD Performance Command Center"],
+                    next: ["Leadership Trend View", "Compact Summary", "Landscape Export View for PNG", "Export Master View"]
+                },
+                {
+                    title: ["Leadership Trend View"],
+                    next: ["Compact Summary", "Landscape Export View for PNG", "Export Master View"]
+                },
+                {
+                    title: ["Compact Summary"],
+                    next: ["Landscape Export View for PNG", "Export Master View"]
+                }
+            ];
+
+            let added = 0;
+
+            for (const section of sections) {
+                const canvas = await captureSectionByHeading(section.title, section.next);
+
+                if (canvas && canvas.height > 50) {
+                    if (added > 0) pdf.addPage();
+                    await addCanvasAsPDFPage(pdf, canvas);
+                    added += 1;
+                }
+            }
+
+            if (added === 0) {
+                alert("No sections found to export.");
+                return;
+            }
+
+            pdf.save("l1_ops_master_view_sectioned.pdf");
+        }
+        </script>
+        """,
+        height=70,
+    )
