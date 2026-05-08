@@ -1673,7 +1673,6 @@ with tab4:
                 display_quarter.append("")
     out["QUARTER"] = display_quarter
 
-        return out
 
 def highlight_top_scorer(row):
     """
