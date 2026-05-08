@@ -1421,6 +1421,286 @@ with tab4:
     st.divider()
 
 # -------------------------------
+# Landscape Export View for PNG
+# -------------------------------
+st.divider()
+st.markdown("## 🖼️ Landscape Export View")
+st.caption("This compact layout is optimized for single-image PNG export.")
+
+with st.container(border=True):
+    st.markdown(f"## 🌟 L1 Ops Master Performance View — {selected_year}")
+
+    st.markdown(
+        f"""
+        <div style="
+            background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+            border-radius:16px;
+            padding:16px 22px;
+            margin:10px 0 14px 0;
+            border:1px solid rgba(74,222,128,0.35);
+        ">
+            <div style="font-size:15px;color:#bbf7d0;font-weight:800;">
+                💡 L1 Impact Created
+            </div>
+            <div style="font-size:34px;color:white;font-weight:950;margin-top:4px;">
+                {l1_pct}% resolved within L1
+            </div>
+            <div style="font-size:14px;color:#dcfce7;margin-top:4px;font-weight:600;">
+                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> issues, reducing L2 dependency and saving escalation bandwidth.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # KPI row
+    lk1, lk2, lk3, lk4, lk5 = st.columns(5)
+
+    with lk1:
+        st.metric("🚨 Total Issues", total_issues)
+    with lk2:
+        st.metric("✅ L1 Resolved", l1_total, f"{l1_pct}%")
+    with lk3:
+        st.metric("⬆️ Moved to L2", l2_total, f"{l2_pct}%")
+    with lk4:
+        st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
+    with lk5:
+        st.metric("🥇 Best POD", best_pod)
+
+    st.divider()
+
+    # Main landscape grid
+    left, right = st.columns([1.45, 1])
+
+    with left:
+        st.markdown("### 🧩 POD Performance")
+
+        pod_landscape = pod_master.rename(
+            columns={
+                "PODS": "POD",
+                "Sev2_Received": "Sev-2",
+                "Sev3_Received": "Sev-3",
+            }
+        )
+
+        pod_landscape = pod_landscape[
+            [
+                "POD",
+                "Total Issues",
+                "Sev-2",
+                "Sev-3",
+                "L1 Resolved",
+                "L1 Resolved %",
+                "Moved to L2",
+                "Moved to L2 %",
+            ]
+        ]
+
+        styled_pod_landscape = pod_landscape.style.format(
+            {
+                "L1 Resolved %": "{:.1f}%",
+                "Moved to L2 %": "{:.1f}%",
+            }
+        )
+
+        st.dataframe(
+            styled_pod_landscape,
+            use_container_width=True,
+            hide_index=True,
+            height=250,
+        )
+
+        st.markdown("### 🏆 POD Resolve Ranking")
+
+        pod_rank_chart = (
+            alt.Chart(pod_master)
+            .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+            .encode(
+                x=alt.X(
+                    "L1 Resolved %:Q",
+                    title="L1 Resolved %",
+                    scale=alt.Scale(domain=[0, 100]),
+                ),
+                y=alt.Y("PODS:N", sort="-x", title=None),
+                tooltip=[
+                    "PODS",
+                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                    alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                ],
+            )
+            .properties(height=250)
+        )
+
+        st.altair_chart(pod_rank_chart, use_container_width=True)
+
+    with right:
+        st.markdown("### 📈 Trend View")
+
+        if master_month_filter == "All":
+            trend_landscape = (
+                mv_view.groupby("Month", as_index=False)[
+                    ["Total Issues", "L1 Resolved", "Moved to L2"]
+                ]
+                .sum()
+            )
+
+            trend_landscape = trend_landscape[trend_landscape["Total Issues"] > 0].copy()
+
+            trend_landscape["Month"] = pd.Categorical(
+                trend_landscape["Month"].astype(str),
+                categories=MONTH_ORDER,
+                ordered=True,
+            )
+
+            trend_landscape = trend_landscape.sort_values("Month")
+            trend_landscape["Month"] = trend_landscape["Month"].astype(str)
+
+            trend_landscape["L1 Resolved %"] = _mv_safe_pct(
+                trend_landscape["L1 Resolved"],
+                trend_landscape["Total Issues"],
+            ).round(1)
+
+            trend_landscape["Moved to L2 %"] = _mv_safe_pct(
+                trend_landscape["Moved to L2"],
+                trend_landscape["Total Issues"],
+            ).round(1)
+
+            l1_trend_chart = (
+                alt.Chart(trend_landscape)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y(
+                        "L1 Resolved %:Q",
+                        title="L1 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                    ],
+                )
+                .properties(height=210)
+            )
+
+            st.altair_chart(l1_trend_chart, use_container_width=True)
+
+            l2_trend_chart = (
+                alt.Chart(trend_landscape)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                    y=alt.Y(
+                        "Moved to L2 %:Q",
+                        title="L2 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    tooltip=[
+                        "Month",
+                        alt.Tooltip("Moved to L2:Q", title="Moved to L2"),
+                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=210)
+            )
+
+            st.altair_chart(l2_trend_chart, use_container_width=True)
+
+        else:
+            pod_l1_chart = (
+                alt.Chart(pod_master)
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .encode(
+                    x=alt.X(
+                        "L1 Resolved %:Q",
+                        title="L1 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                    ],
+                )
+                .properties(height=210)
+            )
+
+            st.altair_chart(pod_l1_chart, use_container_width=True)
+
+            pod_l2_chart = (
+                alt.Chart(pod_master)
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .encode(
+                    x=alt.X(
+                        "Moved to L2 %:Q",
+                        title="L2 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Moved to L2 %:Q", title="L2 %", format=".1f"),
+                    ],
+                )
+                .properties(height=210)
+            )
+
+            st.altair_chart(pod_l2_chart, use_container_width=True)
+
+        st.markdown("### 👥 People Performance")
+
+        try:
+            people_raw_landscape = load_perf_csv(PERF_PEOPLE_FILE, f"Upload {PERF_PEOPLE_FILE}")
+            people_all_landscape = normalize_people_perf(people_raw_landscape)
+            people_year_landscape = people_all_landscape[
+                people_all_landscape["Year"] == selected_year
+            ].copy()
+
+            if master_month_filter != "All":
+                people_year_landscape = people_year_landscape[
+                    people_year_landscape["Month"].astype(str) == master_month_filter
+                ]
+
+            if people_year_landscape.empty:
+                st.info("No people performance rows for selected filter.")
+            else:
+                people_landscape = (
+                    people_year_landscape.groupby("Name", as_index=False)[
+                        ["Sev2_Contributed", "Sev3_Resolved_RCA"]
+                    ]
+                    .sum()
+                )
+
+                people_landscape["Total"] = (
+                    people_landscape["Sev2_Contributed"]
+                    + people_landscape["Sev3_Resolved_RCA"]
+                )
+
+                people_landscape = people_landscape.sort_values(
+                    "Total",
+                    ascending=False,
+                ).head(6)
+
+                people_landscape = people_landscape.rename(
+                    columns={
+                        "Name": "Person",
+                        "Sev2_Contributed": "Sev-2",
+                        "Sev3_Resolved_RCA": "Sev-3",
+                    }
+                )
+
+                st.dataframe(
+                    people_landscape[["Person", "Sev-2", "Sev-3", "Total"]],
+                    use_container_width=True,
+                    hide_index=True,
+                    height=250,
+                )
+        except Exception:
+            st.info("People performance table could not be loaded.")
+
+# -------------------------------
 # Export buttons
 # PNG = landscape export view only
 # PDF = section-wise pages, no section cut
