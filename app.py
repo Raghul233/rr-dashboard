@@ -1800,74 +1800,75 @@ components.html(
     await ensureLibraries();
 
     const doc = window.parent.document;
-    const main = getMainContainer();
 
     const allNodes = [...doc.querySelectorAll("*")];
 
-    const expanderNode = allNodes.find(el =>
+    const expanderTextNode = allNodes.find(el =>
         el.innerText &&
         el.innerText.trim().includes("Landscape Export View for PNG")
     );
 
-    if (!expanderNode) {
-        alert("Could not find Landscape Export View for PNG expander.");
+    if (!expanderTextNode) {
+        alert("Could not find Landscape Export View for PNG section.");
         return;
     }
 
-    // Open expander if collapsed
-    if (
-        expanderNode.getAttribute("aria-expanded") === "false" ||
-        expanderNode.closest('[data-testid="stExpander"]')
-    ) {
-        expanderNode.click();
+    // Find Streamlit expander container
+    let expanderContainer =
+        expanderTextNode.closest('[data-testid="stExpander"]') ||
+        expanderTextNode.closest("details") ||
+        expanderTextNode.parentElement;
+
+    if (!expanderContainer) {
+        alert("Could not locate Landscape Export container.");
+        return;
+    }
+
+    // Open expander if it is collapsed
+    const button =
+        expanderContainer.querySelector("button") ||
+        expanderTextNode.closest("button") ||
+        expanderTextNode;
+
+    const isCollapsed =
+        button.getAttribute("aria-expanded") === "false";
+
+    if (isCollapsed) {
+        button.click();
         await new Promise(r => setTimeout(r, 1500));
     }
 
-    const expanderTop = expanderNode.getBoundingClientRect().top;
+    // Re-query after opening
+    expanderContainer =
+        [...doc.querySelectorAll('[data-testid="stExpander"], details, div')]
+            .find(el =>
+                el.innerText &&
+                el.innerText.includes("Landscape Export View for PNG") &&
+                el.innerText.includes("L1 Ops Master Performance View")
+            ) || expanderContainer;
 
-    const headings = [...doc.querySelectorAll("h1, h2, h3")];
+    const oldScroll = window.parent.scrollY;
+    window.parent.scrollTo(0, 0);
+    await new Promise(r => setTimeout(r, 700));
 
-    // Find ONLY the L1 heading that appears AFTER the Landscape Export expander
-    const landscapeHeading = headings.find(el =>
-        el.innerText &&
-        el.innerText.includes("L1 Ops Master Performance View - 2026") &&
-        el.getBoundingClientRect().top > expanderTop
-    );
+    const canvas = await window.parent.html2canvas(expanderContainer, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#0e1117",
+        width: expanderContainer.scrollWidth,
+        height: expanderContainer.scrollHeight,
+        windowWidth: expanderContainer.scrollWidth,
+        windowHeight: expanderContainer.scrollHeight,
+        scrollX: 0,
+        scrollY: 0
+    });
 
-    const exportHeading = headings.find(el =>
-        el.innerText &&
-        el.innerText.includes("Export Master View") &&
-        el.getBoundingClientRect().top > expanderTop
-    );
-
-    if (!landscapeHeading) {
-        alert("Could not find L1 Ops Master Performance View inside Landscape Export section.");
-        return;
-    }
-
-    const mainRect = main.getBoundingClientRect();
-    const startRect = landscapeHeading.getBoundingClientRect();
-
-    const startY = Math.max(
-        0,
-        startRect.top - mainRect.top - 15
-    );
-
-    const endY = exportHeading
-        ? exportHeading.getBoundingClientRect().top - mainRect.top - 25
-        : main.scrollHeight;
-
-    const canvas = await captureElementRegion(
-        main,
-        startY,
-        endY
-    );
+    window.parent.scrollTo(0, oldScroll);
 
     const link = window.parent.document.createElement("a");
-
     link.download = "l1_ops_master_view_landscape.png";
     link.href = canvas.toDataURL("image/png");
-
     link.click();
 }
     // ------------------------------------
