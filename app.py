@@ -862,7 +862,7 @@ with tab3:
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
     
 # ---------- Tab 4: L1 Master View ----------
-with tab5:
+with tab4:
     import altair as alt
     import streamlit.components.v1 as components
 
