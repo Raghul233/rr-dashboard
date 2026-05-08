@@ -959,7 +959,10 @@ with tab4:
                 min-height:120px;
             ">
                 <div style="font-size:13px; color:#AEB6C2; font-weight:800;">{icon} {title}</div>
-                <div style="font-size:36px; font-weight:900; color:{color}; margin-top:6px;">{value}</div>
+                <div style="font-size:32px; font-weight:900; color:{color}; margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            ">
+    {value}
+</div>
                 <div style="font-size:12px; color:#AEB6C2; margin-top:3px;">{subtitle}</div>
             </div>
             """,
