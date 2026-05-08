@@ -1066,30 +1066,69 @@ with tab4:
     # -------------------------------
     # Hero banner
     # -------------------------------
-    st.markdown(
+        st.markdown(
         f"""
+        <div style="padding-top:10px; padding-bottom:10px;">
+
+            <h1 style="
+                font-size:52px;
+                margin-bottom:8px;
+                font-weight:900;
+            ">
+                🌟 L1 Ops Master Performance View — {selected_year}
+            </h1>
+
+            <div style="
+                font-size:20px;
+                color:#AEB6C1;
+                margin-bottom:25px;
+            ">
+                Export view optimized for leadership snapshot |
+                Month: <b>{export_month_label}</b>
+            </div>
+
+        </div>
+
         <div style="
             background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-            border-radius:20px;
-            padding:24px 30px;
-            margin:18px 0 16px 0;
+            padding:28px;
+            border-radius:18px;
             border:1px solid rgba(74,222,128,0.35);
-            box-shadow:0 10px 28px rgba(0,0,0,0.28);
+            margin-bottom:25px;
         ">
-            <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
-                💡 L1 Impact Created — {report_scope}
+
+            <div style="
+                font-size:24px;
+                font-weight:800;
+                color:#bbf7d0;
+            ">
+                💡 L1 Impact Created — {impact_month_label}
             </div>
-            <div style="font-size:44px;color:white;font-weight:950;margin-top:6px;line-height:1.05;">
-                {l1_pct}% resolved within L1
+
+            <div style="
+                font-size:58px;
+                font-weight:900;
+                margin-top:10px;
+                line-height:1;
+                color:white;
+            ">
+                {l1_pct:.1f}% resolved within L1
             </div>
-            <div style="font-size:16px;color:#dcfce7;margin-top:8px;font-weight:600;">
-                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducing L2 dependency and saving escalation bandwidth.
+
+            <div style="
+                margin-top:15px;
+                font-size:22px;
+                color:#dcfce7;
+                font-weight:650;
+            ">
+                L1 Ops resolved {l1_total} of {total_issues} total issues,
+                reducing L2 dependency and saving escalation bandwidth.
             </div>
+
         </div>
         """,
         unsafe_allow_html=True,
     )
-
     # -------------------------------
     # KPI cards
     # -------------------------------
