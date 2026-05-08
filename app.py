@@ -1391,7 +1391,7 @@ with tab4:
         with k4:
             st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
         with k5:
-            st.metric("🏅 Best POD", Highest_Resolve_pod)
+            st.metric("💎 POD with Highest Resolution %", best_pod)
 
         st.divider()
 
