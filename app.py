@@ -1486,50 +1486,29 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
         unsafe_allow_html=True,
     )
 
-    # =====================================================
+        # =====================================================
     # KPI ROW
     # =====================================================
     k1, k2, k3, k4, k5 = st.columns(5)
 
     with k1:
-        st.metric(
-            "🚨 Total Issues",
-            f"{total_issues}"
-        )
+        st.metric("🚨 Total Issues", f"{total_issues}")
 
     with k2:
-        st.metric(
-            "✅ L1 Resolved",
-            f"{l1_total}",
-            f"{l1_pct:.1f}%"
-        )
+        st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
 
     with k3:
-        st.metric(
-            "⬆️ Moved to L2",
-            f"{l2_total}",
-            f"{l2_pct:.1f}%"
-        )
+        st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
 
     with k4:
-        st.metric(
-            "📊 Sev2 / Sev3",
-            f"{sev2_total / sev3_total}"
-        )
+        st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
 
     with k5:
         best_pod = (
-            pod_summary.sort_values(
-                "L1 Resolved %",
-                ascending=False
-            )
+            pod_summary.sort_values("L1 Resolved %", ascending=False)
             .iloc[0]["POD"]
         )
-
-        st.metric(
-            "🏅 Best POD",
-            best_pod
-        )
+        st.metric("🏅 Best POD", best_pod)
 
     st.divider()
 
@@ -1539,7 +1518,6 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
     left_export, right_export = st.columns([1.5, 1])
 
     with left_export:
-
         st.subheader("🧩 POD Performance")
 
         export_pod_table = pod_summary[
@@ -1555,46 +1533,42 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
             ]
         ].copy()
 
+        styled_export_pod_table = export_pod_table.style.format(
+            {
+                "L1 Resolved %": "{:.1f}%",
+                "Moved to L2 %": "{:.1f}%",
+            }
+        )
+
         st.dataframe(
-            export_pod_table,
+            styled_export_pod_table,
             use_container_width=True,
             hide_index=True,
             height=320,
         )
 
     with right_export:
-
         st.subheader("📈 Trend View")
 
         trend_chart_export = (
             alt.Chart(pod_summary)
             .mark_bar()
             .encode(
-                y=alt.Y(
-                    "POD:N",
-                    sort="-x",
-                    title=None
-                ),
+                y=alt.Y("POD:N", sort="-x", title=None),
                 x=alt.X(
                     "L1 Resolved %:Q",
                     scale=alt.Scale(domain=[0, 100]),
-                    title="L1 %"
+                    title="L1 %",
                 ),
                 tooltip=[
                     "POD",
-                    alt.Tooltip(
-                        "L1 Resolved %:Q",
-                        format=".1f"
-                    )
+                    alt.Tooltip("L1 Resolved %:Q", format=".1f"),
                 ],
             )
             .properties(height=280)
         )
 
-        st.altair_chart(
-            trend_chart_export,
-            use_container_width=True
-        )
+        st.altair_chart(trend_chart_export, use_container_width=True)
 
     # =====================================================
     # POD RANKING + PEOPLE TABLE
@@ -1602,46 +1576,31 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
     left_bottom, right_bottom = st.columns([1, 1])
 
     with left_bottom:
-
         st.subheader("🏆 POD Resolve Ranking")
 
         ranking_chart = (
             alt.Chart(
-                pod_summary.sort_values(
-                    "L1 Resolved %",
-                    ascending=False
-                )
+                pod_summary.sort_values("L1 Resolved %", ascending=False)
             )
             .mark_bar()
             .encode(
-                y=alt.Y(
-                    "POD:N",
-                    sort="-x",
-                    title=None
-                ),
+                y=alt.Y("POD:N", sort="-x", title=None),
                 x=alt.X(
                     "L1 Resolved %:Q",
                     scale=alt.Scale(domain=[0, 100]),
-                    title="L1 Resolved %"
+                    title="L1 Resolved %",
                 ),
                 tooltip=[
                     "POD",
-                    alt.Tooltip(
-                        "L1 Resolved %:Q",
-                        format=".1f"
-                    )
+                    alt.Tooltip("L1 Resolved %:Q", format=".1f"),
                 ],
             )
             .properties(height=260)
         )
 
-        st.altair_chart(
-            ranking_chart,
-            use_container_width=True
-        )
+        st.altair_chart(ranking_chart, use_container_width=True)
 
     with right_bottom:
-
         st.subheader("👥 People Performance")
 
         export_people = people_master[
@@ -1653,12 +1612,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
             ]
         ].copy()
 
-        export_people.columns = [
-            "Person",
-            "Sev-2",
-            "Sev-3",
-            "Total",
-        ]
+        export_people.columns = ["Person", "Sev-2", "Sev-3", "Total"]
 
         st.dataframe(
             export_people,
@@ -1670,7 +1624,7 @@ with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
     # ---------- END MARKER ----------
     st.markdown(
         '<div id="landscape-export-end"></div>',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 # =========================================================
