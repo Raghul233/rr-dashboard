@@ -861,12 +861,12 @@ with tab3:
     
     st.dataframe(styled_pm, use_container_width=True, hide_index=True)
     
-# ---------- Tab 5: L1 Master View ----------
+# ---------- Tab 4: L1 Master View ----------
 with tab4:
     import altair as alt
     import streamlit.components.v1 as components
 
-    st.markdown(f"# 🌟 L1 Ops Master Performance View — {selected_year}")
+    st.markdown(f"# 🌟 L1 Ops Performance — {selected_year}")
     st.caption(
         "Leadership snapshot showing POD performance, L1 resolution efficiency, people contribution, "
         "and L2 effort saved through L1 ownership."
@@ -1347,7 +1347,7 @@ with tab4:
             f"""
             <div style="padding-top:10px; padding-bottom:10px;">
                 <h1 style="font-size:52px; margin-bottom:8px; font-weight:900;">
-                    🌟 L1 Ops Master Performance View — {selected_year}
+                    🌟 L1 Ops Performance — {selected_year}
                 </h1>
                 <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
                     Export view optimized for leadership snapshot |
@@ -1377,6 +1377,9 @@ with tab4:
             unsafe_allow_html=True,
         )
 
+        # -------------------------------
+        # KPI Row
+        # -------------------------------
         k1, k2, k3, k4, k5 = st.columns(5)
 
         with k1:
@@ -1392,34 +1395,113 @@ with tab4:
 
         st.divider()
 
-        left_export, right_export = st.columns([1.5, 1])
+        # -------------------------------
+        # POD Command Center
+        # -------------------------------
+        st.subheader("🧩 POD Performance Command Center")
+
+        pod_card_cols = st.columns(5)
+
+        for idx, row in pod_master.reset_index(drop=True).iterrows():
+            resolve_pct = float(row["L1 Resolved %"])
+            l2_pct_local = float(row["Moved to L2 %"])
+            pod_name = str(row["PODS"])
+
+            with pod_card_cols[idx % 5]:
+                with st.container(border=True):
+                    st.markdown(
+                        f"""
+                        <div style="
+                            min-height:54px;
+                            font-size:20px;
+                            font-weight:900;
+                            line-height:1.15;
+                            color:white;
+                            margin-bottom:6px;
+                            overflow-wrap:break-word;
+                        ">
+                            🧩 {pod_name}
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    st.metric("Total", int(row["Total Issues"]))
+
+                    s1, s2 = st.columns(2)
+                    with s1:
+                        st.metric("Sev 2", int(row["Sev2_Received"]))
+                    with s2:
+                        st.metric("Sev 3", int(row["Sev3_Received"]))
+
+                    st.markdown("**✅ L1 %**")
+                    st.progress(min(resolve_pct / 100, 1.0))
+                    st.markdown(
+                        f"""
+                        <div style="font-size:20px;font-weight:900;color:#86efac;">
+                            {resolve_pct:.1f}%
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    st.markdown("**⬆️ L2 %**")
+                    st.progress(min(l2_pct_local / 100, 1.0))
+                    st.markdown(
+                        f"""
+                        <div style="font-size:18px;font-weight:900;color:#fbbf24;">
+                            {l2_pct_local:.1f}%
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+        st.divider()
+
+        # -------------------------------
+        # Landscape Table + Trend
+        # -------------------------------
+        left_export, right_export = st.columns([1.45, 1])
 
         with left_export:
-            st.subheader("🧩 POD Performance")
+            st.subheader("🧾 POD Performance")
 
-            export_pod_table = pod_master.rename(
+            export_pod_table = pod_master.copy()
+
+            export_pod_table["Sev-2 Resolved %"] = (
+                export_pod_table["Sev2_Contributed"]
+                / export_pod_table["Sev2_Received"].replace(0, pd.NA)
+                * 100
+            ).fillna(0).round(1)
+
+            export_pod_table["Sev-3 Resolved %"] = (
+                export_pod_table["Sev3_Resolved_RCA"]
+                / export_pod_table["Sev3_Received"].replace(0, pd.NA)
+                * 100
+            ).fillna(0).round(1)
+
+            export_pod_table = export_pod_table.rename(
                 columns={
                     "PODS": "POD",
                     "Sev2_Received": "Sev-2 Received",
                     "Sev3_Received": "Sev-3 Received",
                 }
-            )[
+            )
+
+            export_pod_table = export_pod_table[
                 [
                     "POD",
-                    "Total Issues",
-                    "Sev-2 Received",
                     "Sev-3 Received",
-                    "L1 Resolved",
-                    "L1 Resolved %",
-                    "Moved to L2",
-                    "Moved to L2 %",
+                    "Sev-3 Resolved %",
+                    "Sev-2 Received",
+                    "Sev-2 Resolved %",
                 ]
             ].copy()
 
             styled_export_pod_table = export_pod_table.style.format(
                 {
-                    "L1 Resolved %": "{:.1f}%",
-                    "Moved to L2 %": "{:.1f}%",
+                    "Sev-3 Resolved %": "{:.1f}%",
+                    "Sev-2 Resolved %": "{:.1f}%",
                 }
             )
 
@@ -1427,7 +1509,7 @@ with tab4:
                 styled_export_pod_table,
                 use_container_width=True,
                 hide_index=True,
-                height=320,
+                height=270,
             )
 
         with right_export:
@@ -1438,48 +1520,43 @@ with tab4:
                 .mark_bar()
                 .encode(
                     y=alt.Y("PODS:N", sort="-x", title=None),
-                    x=alt.X("L1 Resolved %:Q", scale=alt.Scale(domain=[0, 100]), title="L1 %"),
-                    tooltip=["PODS", alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f")],
+                    x=alt.X(
+                        "L1 Resolved %:Q",
+                        scale=alt.Scale(domain=[0, 100]),
+                        title="L1 Resolved %",
+                    ),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                    ],
                 )
-                .properties(height=280)
+                .properties(height=270)
             )
 
             st.altair_chart(trend_chart_export, use_container_width=True)
 
-        left_bottom, right_bottom = st.columns([1, 1])
+        st.divider()
 
-        with left_bottom:
-            st.subheader("🏆 POD Resolve Ranking")
+        # -------------------------------
+        # People Performance
+        # -------------------------------
+        st.subheader("👥 People Performance")
 
-            ranking_chart = (
-                alt.Chart(pod_master.sort_values("L1 Resolved %", ascending=False))
-                .mark_bar()
-                .encode(
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    x=alt.X("L1 Resolved %:Q", scale=alt.Scale(domain=[0, 100]), title="L1 Resolved %"),
-                    tooltip=["PODS", alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f")],
-                )
-                .properties(height=260)
+        try:
+            export_people = people_summary_mv.rename(
+                columns={"Total Contribution": "Total"}
+            )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
+
+            st.dataframe(
+                export_people,
+                use_container_width=True,
+                hide_index=True,
+                height=240,
             )
-
-            st.altair_chart(ranking_chart, use_container_width=True)
-
-        with right_bottom:
-            st.subheader("👥 People Performance")
-
-            try:
-                export_people = people_summary_mv.rename(
-                    columns={"Total Contribution": "Total"}
-                )[["Person", "Sev-2", "Sev-3", "Total"]].copy()
-
-                st.dataframe(
-                    export_people,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=260,
-                )
-            except Exception:
-                st.info("People performance table could not be loaded.")
+        except Exception:
+            st.info("People performance table could not be loaded.")
 
         st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
