@@ -1458,85 +1458,127 @@ with tab4:
 
         st.divider()
 
-        # -------------------------------
-        # Landscape Table + Trend
-        # -------------------------------
-        left_export, right_export = st.columns([1.45, 1])
+            # =====================================================
+    # LANDSCAPE TABLE + TREND VIEW
+    # =====================================================
+    left_export, right_export = st.columns([1.15, 1.1], gap="large")
 
-        with left_export:
-            st.subheader("🧾 POD Performance")
+    # -----------------------------------------------------
+    # POD PERFORMANCE TABLE
+    # -----------------------------------------------------
+    with left_export:
 
-            export_pod_table = pod_master.copy()
+        st.subheader("🧾 POD Performance")
 
-            export_pod_table["Sev-2 Resolved %"] = (
-                export_pod_table["Sev2_Contributed"]
-                / export_pod_table["Sev2_Received"].replace(0, pd.NA)
-                * 100
-            ).fillna(0).round(1)
+        export_pod_table = pod_master.copy()
 
-            export_pod_table["Sev-3 Resolved %"] = (
-                export_pod_table["Sev3_Resolved_RCA"]
-                / export_pod_table["Sev3_Received"].replace(0, pd.NA)
-                * 100
-            ).fillna(0).round(1)
+        export_pod_table["Sev-2 Resolved %"] = (
+            export_pod_table["Sev2_Contributed"]
+            / export_pod_table["Sev2_Received"].replace(0, pd.NA)
+            * 100
+        ).fillna(0).round(1)
 
-            export_pod_table = export_pod_table.rename(
-                columns={
-                    "PODS": "POD",
-                    "Sev2_Received": "Sev-2 Received",
-                    "Sev3_Received": "Sev-3 Received",
-                }
-            )
+        export_pod_table["Sev-3 Resolved %"] = (
+            export_pod_table["Sev3_Resolved_RCA"]
+            / export_pod_table["Sev3_Received"].replace(0, pd.NA)
+            * 100
+        ).fillna(0).round(1)
 
-            export_pod_table = export_pod_table[
-                [
-                    "POD",
-                    "Sev-3 Received",
-                    "Sev-3 Resolved %",
-                    "Sev-2 Received",
-                    "Sev-2 Resolved %",
-                ]
-            ].copy()
+        export_pod_table = export_pod_table.rename(
+            columns={
+                "PODS": "POD",
+                "Sev2_Received": "Sev-2",
+                "Sev3_Received": "Sev-3",
+                "Sev-2 Resolved %": "Sev-2 %",
+                "Sev-3 Resolved %": "Sev-3 %",
+            }
+        )
 
-            styled_export_pod_table = export_pod_table.style.format(
+        export_pod_table = export_pod_table[
+            [
+                "POD",
+                "Sev-3",
+                "Sev-3 %",
+                "Sev-2",
+                "Sev-2 %",
+            ]
+        ].copy()
+
+        styled_export_pod_table = (
+            export_pod_table.style
+            .format(
                 {
-                    "Sev-3 Resolved %": "{:.1f}%",
-                    "Sev-2 Resolved %": "{:.1f}%",
+                    "Sev-3 %": "{:.1f}%",
+                    "Sev-2 %": "{:.1f}%",
                 }
             )
+        )
 
-            st.dataframe(
-                styled_export_pod_table,
-                use_container_width=True,
-                hide_index=True,
-                height=270,
+        st.dataframe(
+            styled_export_pod_table,
+            use_container_width=True,
+            hide_index=True,
+            height=255,
+        )
+
+    # -----------------------------------------------------
+    # TREND VIEW
+    # -----------------------------------------------------
+    with right_export:
+
+        st.subheader("📈 Trend View")
+
+        trend_chart_export = (
+            alt.Chart(pod_master)
+            .mark_bar(
+                cornerRadiusTopRight=6,
+                cornerRadiusBottomRight=6
             )
-
-        with right_export:
-            st.subheader("📈 Trend View")
-
-            trend_chart_export = (
-                alt.Chart(pod_master)
-                .mark_bar()
-                .encode(
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    x=alt.X(
+            .encode(
+                y=alt.Y(
+                    "PODS:N",
+                    sort="-x",
+                    title=None,
+                    axis=alt.Axis(
+                        labelFontSize=14,
+                        labelLimit=220,
+                        labelPadding=12
+                    )
+                ),
+                x=alt.X(
+                    "L1 Resolved %:Q",
+                    scale=alt.Scale(domain=[0, 100]),
+                    title="L1 Resolved %",
+                    axis=alt.Axis(
+                        titleFontSize=14,
+                        labelFontSize=12
+                    )
+                ),
+                tooltip=[
+                    alt.Tooltip("PODS:N", title="POD"),
+                    alt.Tooltip(
                         "L1 Resolved %:Q",
-                        scale=alt.Scale(domain=[0, 100]),
-                        title="L1 Resolved %",
+                        title="L1 %",
+                        format=".1f"
                     ),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                        alt.Tooltip("L1 Resolved:Q", title="L1 Resolved"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    ],
-                )
-                .properties(height=270)
+                    alt.Tooltip(
+                        "Total Issues:Q",
+                        title="Issues"
+                    ),
+                ],
             )
+            .properties(
+                height=255
+            )
+            .configure_view(
+                strokeOpacity=0
+            )
+        )
 
-            st.altair_chart(trend_chart_export, use_container_width=True)
-
+        st.altair_chart(
+            trend_chart_export,
+            use_container_width=True
+        )
         st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
 
     # =========================================================
