@@ -1075,67 +1075,57 @@ with tab4:
     # -------------------------------
     # POD Performance Cards
     # -------------------------------
-    st.markdown("### 🧩 POD Performance Snapshot")
+st.markdown("### 🧩 POD Performance Snapshot")
 
-    pod_cards = (
-        pod_view_p1.groupby("PODS", as_index=False)[
-            ["Sev2_Received", "Sev3_Received", "Total Issues", "L1 Resolved", "Moved to L2"]
-        ]
-        .sum()
-    )
+pod_cards = (
+    pod_view_p1.groupby("PODS", as_index=False)[
+        ["Sev2_Received", "Sev3_Received", "Total Issues", "L1 Resolved", "Moved to L2"]
+    ]
+    .sum()
+)
 
-    pod_cards["L1 Resolved %"] = _p1_safe_pct(pod_cards["L1 Resolved"], pod_cards["Total Issues"]).round(1)
-    pod_cards["Moved to L2 %"] = _p1_safe_pct(pod_cards["Moved to L2"], pod_cards["Total Issues"]).round(1)
+pod_cards["L1 Resolved %"] = _p1_safe_pct(
+    pod_cards["L1 Resolved"], pod_cards["Total Issues"]
+).round(1)
 
-    pod_cards = pod_cards.sort_values(["L1 Resolved %", "Total Issues"], ascending=[False, False])
+pod_cards["Moved to L2 %"] = _p1_safe_pct(
+    pod_cards["Moved to L2"], pod_cards["Total Issues"]
+).round(1)
 
-    card_cols = st.columns(3)
+pod_cards = pod_cards.sort_values(
+    ["L1 Resolved %", "Total Issues"],
+    ascending=[False, False]
+)
 
-    for idx, row in pod_cards.iterrows():
-        with card_cols[idx % 3]:
-            st.markdown(
-                f"""
-                <div style="
-                    border:1px solid rgba(255,255,255,0.12);
-                    border-radius:16px;
-                    padding:18px;
-                    margin-bottom:16px;
-                    background:rgba(255,255,255,0.035);
-                ">
-                    <div style="font-size:22px; font-weight:900; color:white;">
-                        🧩 {row["PODS"]}
-                    </div>
-                    <div style="font-size:13px; color:#AEB6C2; margin-bottom:14px;">
-                        POD performance summary
-                    </div>
+card_cols = st.columns(3)
 
-                    <div style="font-size:30px; font-weight:900; color:white;">
-                        {int(row["Total Issues"])}
-                    </div>
-                    <div style="font-size:13px; color:#AEB6C2; margin-bottom:10px;">
-                        Total Issues
-                    </div>
+for idx, row in pod_cards.reset_index(drop=True).iterrows():
+    with card_cols[idx % 3]:
+        with st.container(border=True):
+            st.markdown(f"### 🧩 {row['PODS']}")
+            st.caption("POD performance summary")
 
-                    <div style="display:flex; justify-content:space-between; font-size:14px;">
-                        <span>Sev 2</span><b>{int(row["Sev2_Received"])}</b>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:14px;">
-                        <span>Sev 3</span><b>{int(row["Sev3_Received"])}</b>
-                    </div>
-                    <hr style="border-color:rgba(255,255,255,0.10);">
+            st.metric("Total Issues", int(row["Total Issues"]))
 
-                    <div style="display:flex; justify-content:space-between; font-size:14px;">
-                        <span>✅ L1 Resolved</span><b>{int(row["L1 Resolved"])} ({row["L1 Resolved %"]:.1f}%)</b>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:14px;">
-                        <span>⬆️ Moved to L2</span><b>{int(row["Moved to L2"])} ({row["Moved to L2 %"]:.1f}%)</b>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric("Sev 2", int(row["Sev2_Received"]))
+            with c2:
+                st.metric("Sev 3", int(row["Sev3_Received"]))
+
+            st.divider()
+
+            st.metric(
+                "✅ L1 Resolved",
+                f"{int(row['L1 Resolved'])}",
+                f"{row['L1 Resolved %']:.1f}%"
             )
 
-    st.divider()
+            st.metric(
+                "⬆️ Moved to L2",
+                f"{int(row['Moved to L2'])}",
+                f"{row['Moved to L2 %']:.1f}%"
+            )
 
     # -------------------------------
     # Charts
