@@ -1139,16 +1139,16 @@ for idx, row in pod_cards.reset_index(drop=True).iterrows():
             .sum()
         )
         # Keep only months that actually have data
-trend = trend[trend["Total Issues"] > 0].copy()
-
-# Preserve fiscal month order
-trend["Month"] = pd.Categorical(
-    trend["Month"].astype(str),
-    categories=MONTH_ORDER,
-    ordered=True
-)
-trend = trend.sort_values("Month")
-trend["Month"] = trend["Month"].astype(str)
+        trend = trend[trend["Total Issues"] > 0].copy()
+        
+        # Preserve fiscal month order
+        trend["Month"] = pd.Categorical(
+            trend["Month"].astype(str),
+            categories=MONTH_ORDER,
+            ordered=True
+        )
+        trend = trend.sort_values("Month")
+        trend["Month"] = trend["Month"].astype(str)
 
         trend["Month"] = trend["Month"].astype(str)
         trend["L1 Resolved %"] = _p1_safe_pct(trend["L1 Resolved"], trend["Total Issues"]).round(1)
