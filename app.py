@@ -1079,14 +1079,33 @@ with tab4:
             <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
                 💡 L1 Impact Created — {report_scope}
             </div>
-            <div style="font-size:44px;color:white;font-weight:950;margin-top:6px;line-height:1.05;">
-                {l1_pct:.1f}% resolved within L1
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:flex-end;
+                margin-top:10px;
+            ">
+            
+                <div style="
+                    font-size:58px;
+                    font-weight:900;
+                    line-height:1;
+                ">
+                    {l1_pct:.1f}% resolved within L1
+                </div>
+            
+                <div style="
+                    text-align:right;
+                    font-size:22px;
+                    font-weight:800;
+                    color:{l1_delta_color};
+                    line-height:1.2;
+                    padding-bottom:6px;
+                ">
+                    {l1_delta_text}
+                </div>
+            
             </div>
-            <div style="font-size:16px;color:#dcfce7;margin-top:8px;font-weight:600;">
-                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
-                reducing L2 dependency and saving escalation bandwidth.
-            </div>
-        </div>
         """,
         unsafe_allow_html=True,
     )
