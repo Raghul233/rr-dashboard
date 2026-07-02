@@ -1615,7 +1615,7 @@ with tab4:
         # -------------------------------
         st.markdown("## 📈 Sev issues Trend View")
 
-        c1, c2, c3 = st.columns([1.5, 1.0, 1.15])
+        c1, c2, c3 = st.columns(3)
         
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
@@ -1645,7 +1645,9 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(height=250)
+                .properties(
+                    height=260,
+                    width=280,
             )
         
             st.altair_chart(chart, use_container_width=True)
@@ -1676,7 +1678,9 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(height=250)
+                .properties(
+                    height=260,
+                    width=280,
             )
         
             st.altair_chart(chart, use_container_width=True)
@@ -1730,7 +1734,9 @@ with tab4:
                         alt.Tooltip("Count:Q", title="Count"),
                     ],
                 )
-                .properties(height=250)
+                .properties(
+                    height=260,
+                    width=280,
             )
         
             st.altair_chart(chart, use_container_width=True)
