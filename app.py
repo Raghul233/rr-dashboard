@@ -1621,10 +1621,10 @@ with tab4:
             st.markdown("**🏆 POD L1 Resolved %**")
             chart = (
                 alt.Chart(pod_master)
-                .mark_bar(color="#7ec8ff")
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
                 .encode(
                     x=alt.X(
-                        "L1_Resolved_Pct:Q",
+                        "L1 Resolved %:Q",
                         title="L1 %",
                         scale=alt.Scale(domain=[0, 100]),
                     ),
@@ -1638,12 +1638,13 @@ with tab4:
                             labelFontSize=12,
                         ),
                     ),
-                    tooltip=["PODS", "L1_Resolved_Pct"],
+                    tooltip=[
+                        alt.Tooltip("PODS:N", title="POD"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                    ],
                 )
-                .properties(
-                    height=250,
-                    width=320,
-                )
+                .properties(height=250)
             )
             st.altair_chart(chart, use_container_width=True)
     
