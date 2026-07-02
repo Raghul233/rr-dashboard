@@ -1617,8 +1617,8 @@ with tab4:
 
         c1, c2, c3 = st.columns(3, gap="large")
         
-        chart_width = 390
-        chart_height = 270
+        chart_width = 430
+        chart_height = 300
         
         common_y_axis = alt.Y(
             "PODS:N",
@@ -1627,12 +1627,12 @@ with tab4:
             axis=alt.Axis(
                 labelLimit=200,
                 labelPadding=8,
-                labelFontSize=12,
+                labelFontSize=13,
             ),
         )
         
         common_padding = {
-            "left": 65,
+            "left": 75,
             "right": 10,
             "top": 5,
             "bottom": 40,
@@ -1649,7 +1649,7 @@ with tab4:
                         "L1 Resolved %:Q",
                         title="L1 %",
                         scale=alt.Scale(domain=[0, 100]),
-                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
+                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
                     ),
                     y=common_y_axis,
                     tooltip=[
@@ -1677,7 +1677,7 @@ with tab4:
                     x=alt.X(
                         "Total Issues:Q",
                         title="Issues",
-                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
+                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
                     ),
                     y=common_y_axis,
                     tooltip=[
@@ -1718,7 +1718,7 @@ with tab4:
                     x=alt.X(
                         "Count:Q",
                         title="Issues",
-                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
+                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
                     ),
                     y=common_y_axis,
                     color=alt.Color(
@@ -1741,7 +1741,7 @@ with tab4:
                     width=chart_width,
                     height=chart_height,
                     padding={
-                        "left": 65,
+                        "left": 75,
                         "right": 10,
                         "top": 5,
                         "bottom": 55,
