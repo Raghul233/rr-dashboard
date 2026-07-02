@@ -866,10 +866,11 @@ with tab4:
     import altair as alt
     import streamlit.components.v1 as components
 
-    if selected_month == "All":
-        export_month_label = "All / YTD"
-    else:
-        export_month_label = selected_month
+    export_month_label = (
+    "All / YTD"
+    if master_month_filter == "All"
+    else master_month_filter.title()
+    )
 
     st.markdown(
         f"# 🌟 L1 Ops Performance — {selected_year} | {export_month_label}"
