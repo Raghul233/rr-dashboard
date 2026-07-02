@@ -1617,8 +1617,8 @@ with tab4:
 
         c1, c2, c3 = st.columns(3, gap="large")
         
-        chart_width = 430
-        chart_height = 300
+        chart_width = 450
+        chart_height = 310
         
         common_y_axis = alt.Y(
             "PODS:N",
