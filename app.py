@@ -1505,7 +1505,7 @@ with tab4:
                     🌟 L1 Ops Performance — {selected_year}
                 </h1>
                 <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                    Export view optimized for leadership snapshot |
+                    Performance Insights & Its Graphics |
                     Month: <b>{export_month_label}</b>
                 </div>
             </div>
