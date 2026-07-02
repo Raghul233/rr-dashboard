@@ -1744,6 +1744,25 @@ with tab4:
             )
         
             st.altair_chart(chart_severity, use_container_width=False)
+
+            st.markdown(
+                """
+                <div style="
+                    text-align:center;
+                    margin-top:-18px;
+                    margin-bottom:6px;
+                    font-size:11px;
+                    font-weight:600;
+                    color:#D9D9D9;
+                ">
+                    Severity:&nbsp;&nbsp;
+                    <span style="color:#8ecbff;">■</span> Sev 2
+                    &nbsp;&nbsp;&nbsp;
+                    <span style="color:#3f7fff;">■</span> Sev 3
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         
         st.divider()
         # =====================================================
