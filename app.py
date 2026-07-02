@@ -1615,76 +1615,76 @@ with tab4:
         # -------------------------------
         st.markdown("## 📈 Sev issues Trend View")
 
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3 = st.columns(3, gap="large")
         
+        common_y_axis = alt.Y(
+            "PODS:N",
+            sort="-x",
+            title=None,
+            axis=alt.Axis(
+                labelLimit=130,
+                labelPadding=10,
+                labelFontSize=10,
+            ),
+        )
+        
+        # -------------------------------
+        # Chart 1: POD L1 Resolved %
+        # -------------------------------
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
         
-            chart = (
+            chart_l1 = (
                 alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
                 .encode(
                     x=alt.X(
                         "L1 Resolved %:Q",
                         title="L1 %",
                         scale=alt.Scale(domain=[0, 100]),
+                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
                     ),
-                    y=alt.Y(
-                        "PODS:N",
-                        sort="-x",
-                        title=None,
-                        axis=alt.Axis(
-                            labelLimit=150,
-                            labelPadding=6,
-                            labelFontSize=11,
-                        ),
-                    ),
+                    y=common_y_axis,
                     tooltip=[
                         alt.Tooltip("PODS:N", title="POD"),
                         alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(
-                    height=260,
-                    width=280,
+                .properties(width=270, height=240)
             )
         
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart_l1)
         
+        # -------------------------------
+        # Chart 2: POD Total Issues
+        # -------------------------------
         with c2:
             st.markdown("**🚨 POD Total Issues**")
         
-            chart = (
+            chart_total = (
                 alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
                 .encode(
                     x=alt.X(
                         "Total Issues:Q",
                         title="Issues",
+                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
                     ),
-                    y=alt.Y(
-                        "PODS:N",
-                        sort="-x",
-                        title=None,
-                        axis=alt.Axis(
-                            labelLimit=150,
-                            labelPadding=6,
-                            labelFontSize=11,
-                        ),
-                    ),
+                    y=common_y_axis,
                     tooltip=[
                         alt.Tooltip("PODS:N", title="POD"),
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(
-                    height=260,
-                    width=280,
+                .properties(width=270, height=240)
             )
         
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart_total)
         
+        # -------------------------------
+        # Chart 3: Severity Split by POD
+        # -------------------------------
         with c3:
             st.markdown("**📊 Severity Split by POD**")
         
@@ -1702,30 +1702,24 @@ with tab4:
                 }
             )
         
-            chart = (
+            chart_severity = (
                 alt.Chart(sev_long)
                 .mark_bar()
                 .encode(
                     x=alt.X(
                         "Count:Q",
                         title="Issues",
+                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
                     ),
-                    y=alt.Y(
-                        "PODS:N",
-                        sort="-x",
-                        title=None,
-                        axis=alt.Axis(
-                            labelLimit=150,
-                            labelPadding=6,
-                            labelFontSize=11,
-                        ),
-                    ),
+                    y=common_y_axis,
                     color=alt.Color(
                         "Severity:N",
                         title="Severity",
                         legend=alt.Legend(
                             orient="bottom",
                             direction="horizontal",
+                            titleFontSize=10,
+                            labelFontSize=10,
                         ),
                     ),
                     tooltip=[
@@ -1734,12 +1728,10 @@ with tab4:
                         alt.Tooltip("Count:Q", title="Count"),
                     ],
                 )
-                .properties(
-                    height=260,
-                    width=280,
+                .properties(width=270, height=240)
             )
         
-            st.altair_chart(chart)
+            st.altair_chart(chart_severity)
         
         st.divider()
         # =====================================================
