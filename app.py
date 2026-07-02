@@ -1270,132 +1270,132 @@ with tab4:
     }
     
     with c1:
-    st.markdown("**🏆 POD L1 Resolved %**")
-    
-    chart_l1 = (
-        alt.Chart(pod_master)
-        .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-        .encode(
-            x=alt.X(
-                "L1 Resolved %:Q",
-                title="L1 %",
-                scale=alt.Scale(domain=[0, 100]),
-                axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-            ),
-            y=common_y_axis,
-            tooltip=[
-                alt.Tooltip("PODS:N", title="POD"),
-                alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                alt.Tooltip("Total Issues:Q", title="Total Issues"),
-            ],
+        st.markdown("**🏆 POD L1 Resolved %**")
+        
+        chart_l1 = (
+            alt.Chart(pod_master)
+            .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
+            .encode(
+                x=alt.X(
+                    "L1 Resolved %:Q",
+                    title="L1 %",
+                    scale=alt.Scale(domain=[0, 100]),
+                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
+                ),
+                y=common_y_axis,
+                tooltip=[
+                    alt.Tooltip("PODS:N", title="POD"),
+                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                ],
+            )
+            .properties(
+                width=chart_width,
+                height=chart_height,
+                padding=common_padding,
+            )
         )
-        .properties(
-            width=chart_width,
-            height=chart_height,
-            padding=common_padding,
-        )
-    )
-    
-    st.altair_chart(chart_l1, use_container_width=False)
+        
+        st.altair_chart(chart_l1, use_container_width=False)
     
     with c2:
-    st.markdown("**🚨 POD Total Issues**")
-    
-    chart_total = (
-        alt.Chart(pod_master)
-        .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-        .encode(
-            x=alt.X(
-                "Total Issues:Q",
-                title="Issues",
-                axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-            ),
-            y=common_y_axis,
-            tooltip=[
-                alt.Tooltip("PODS:N", title="POD"),
-                alt.Tooltip("Total Issues:Q", title="Total Issues"),
-            ],
+        st.markdown("**🚨 POD Total Issues**")
+        
+        chart_total = (
+            alt.Chart(pod_master)
+            .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
+            .encode(
+                x=alt.X(
+                    "Total Issues:Q",
+                    title="Issues",
+                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
+                ),
+                y=common_y_axis,
+                tooltip=[
+                    alt.Tooltip("PODS:N", title="POD"),
+                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                ],
+            )
+            .properties(
+                width=chart_width,
+                height=chart_height,
+                padding=common_padding,
+            )
         )
-        .properties(
-            width=chart_width,
-            height=chart_height,
-            padding=common_padding,
-        )
-    )
-    
-    st.altair_chart(chart_total, use_container_width=False)
+        
+        st.altair_chart(chart_total, use_container_width=False)
     
     with c3:
-    st.markdown("**📊 Severity Split by POD**")
-    
-    sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
-        id_vars="PODS",
-        value_vars=["Sev2_Received", "Sev3_Received"],
-        var_name="Severity",
-        value_name="Count",
-    )
-    
-    sev_long["Severity"] = sev_long["Severity"].replace(
-        {
-            "Sev2_Received": "Sev 2",
-            "Sev3_Received": "Sev 3",
-        }
-    )
-    
-    chart_severity = (
-        alt.Chart(sev_long)
-        .mark_bar()
-        .encode(
-            x=alt.X(
-                "Count:Q",
-                title="Issues",
-                axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-            ),
-            y=common_y_axis,
-            color=alt.Color(
-                "Severity:N",
-                legend=None,
-            ),
-            tooltip=[
-                alt.Tooltip("PODS:N", title="POD"),
-                alt.Tooltip("Severity:N", title="Severity"),
-                alt.Tooltip("Count:Q", title="Count"),
-            ],
+        st.markdown("**📊 Severity Split by POD**")
+        
+        sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
+            id_vars="PODS",
+            value_vars=["Sev2_Received", "Sev3_Received"],
+            var_name="Severity",
+            value_name="Count",
         )
-        .properties(
-            width=chart_width,
-            height=chart_height,
-            padding={
-                "left": 25,
-                "right": 10,
-                "top": 5,
-                "bottom": 30,
-            },
+        
+        sev_long["Severity"] = sev_long["Severity"].replace(
+            {
+                "Sev2_Received": "Sev 2",
+                "Sev3_Received": "Sev 3",
+            }
         )
-    )
-    
-    st.altair_chart(chart_severity, use_container_width=False)
-    
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            margin-top:-18px;
-            margin-bottom:6px;
-            font-size:11px;
-            font-weight:600;
-            color:#D9D9D9;
-        ">
-            Severity:&nbsp;&nbsp;
-            <span style="color:#8ecbff;">■</span> Sev 2
-            &nbsp;&nbsp;&nbsp;
-            <span style="color:#3f7fff;">■</span> Sev 3
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
-    st.divider()
+        
+        chart_severity = (
+            alt.Chart(sev_long)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    "Count:Q",
+                    title="Issues",
+                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
+                ),
+                y=common_y_axis,
+                color=alt.Color(
+                    "Severity:N",
+                    legend=None,
+                ),
+                tooltip=[
+                    alt.Tooltip("PODS:N", title="POD"),
+                    alt.Tooltip("Severity:N", title="Severity"),
+                    alt.Tooltip("Count:Q", title="Count"),
+                ],
+            )
+            .properties(
+                width=chart_width,
+                height=chart_height,
+                padding={
+                    "left": 25,
+                    "right": 10,
+                    "top": 5,
+                    "bottom": 30,
+                },
+            )
+        )
+        
+        st.altair_chart(chart_severity, use_container_width=False)
+        
+        st.markdown(
+            """
+            <div style="
+                text-align:center;
+                margin-top:-18px;
+                margin-bottom:6px;
+                font-size:11px;
+                font-weight:600;
+                color:#D9D9D9;
+            ">
+                Severity:&nbsp;&nbsp;
+                <span style="color:#8ecbff;">■</span> Sev 2
+                &nbsp;&nbsp;&nbsp;
+                <span style="color:#3f7fff;">■</span> Sev 3
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        st.divider()
 
     # -------------------------------
     # Compact Summary
