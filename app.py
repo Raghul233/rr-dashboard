@@ -1622,15 +1622,15 @@ with tab4:
             sort="-x",
             title=None,
             axis=alt.Axis(
-                labelLimit=130,
+                labelLimit=120,
                 labelPadding=10,
                 labelFontSize=10,
             ),
         )
         
-        # -------------------------------
-        # Chart 1: POD L1 Resolved %
-        # -------------------------------
+        chart_width = 300
+        chart_height = 240
+        
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
         
@@ -1651,14 +1651,13 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(width=270, height=240)
+                .properties(width=chart_width, height=chart_height)
             )
         
-            st.altair_chart(chart_l1)
+            spacer, chart_area = st.columns([0.12, 0.88])
+            with chart_area:
+                st.altair_chart(chart_l1, use_container_width=False)
         
-        # -------------------------------
-        # Chart 2: POD Total Issues
-        # -------------------------------
         with c2:
             st.markdown("**🚨 POD Total Issues**")
         
@@ -1677,14 +1676,13 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(width=270, height=240)
+                .properties(width=chart_width, height=chart_height)
             )
         
-            st.altair_chart(chart_total)
+            spacer, chart_area = st.columns([0.12, 0.88])
+            with chart_area:
+                st.altair_chart(chart_total, use_container_width=False)
         
-        # -------------------------------
-        # Chart 3: Severity Split by POD
-        # -------------------------------
         with c3:
             st.markdown("**📊 Severity Split by POD**")
         
@@ -1728,10 +1726,12 @@ with tab4:
                         alt.Tooltip("Count:Q", title="Count"),
                     ],
                 )
-                .properties(width=270, height=240)
+                .properties(width=chart_width, height=chart_height)
             )
         
-            st.altair_chart(chart_severity)
+            spacer, chart_area = st.columns([0.12, 0.88])
+            with chart_area:
+                st.altair_chart(chart_severity, use_container_width=False)
         
         st.divider()
         # =====================================================
