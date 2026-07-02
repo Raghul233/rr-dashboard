@@ -1115,7 +1115,7 @@ with tab4:
     title_left, legend_right = st.columns([1.4, 1])
 
     with title_left:
-        st.subheader("🧩 POD Performance Command Center")
+        st.subheader("🧩 POD Performance Graphics")
 
     with legend_right:
         st.markdown(
@@ -1244,7 +1244,7 @@ with tab4:
     # -------------------------------
     # Leadership Trend View
     # -------------------------------
-    st.markdown("## 📈 Leadership Trend View")
+    st.markdown("## 📈 Sev issues Trend View")
 
     c1, c2, c3 = st.columns(3)
 
@@ -1310,7 +1310,7 @@ with tab4:
     # -------------------------------
     # Compact Summary
     # -------------------------------
-    st.markdown("## 📋 Compact Summary")
+    st.markdown("## 📋 Summary")
 
     t1, t2 = st.columns([1.2, 1])
 
