@@ -1615,7 +1615,7 @@ with tab4:
         # -------------------------------
         st.markdown("## 📈 Sev issues Trend View")
 
-        c1, c2, c3 = st.columns(3, gap="large")
+        c1, c2, c3 = st.columns([1.1, 1.1, 1.1], gap="medium")
         
         chart_width = 420
         chart_height = 300
