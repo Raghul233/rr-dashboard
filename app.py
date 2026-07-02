@@ -1617,7 +1617,7 @@ with tab4:
 
         c1, c2, c3 = st.columns([1.1, 1.1, 1.1], gap="medium")
         
-        chart_width = 420
+        chart_width = 440
         chart_height = 300
         
         common_y_axis = alt.Y(
