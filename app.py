@@ -1615,23 +1615,35 @@ with tab4:
         # -------------------------------
         st.markdown("## 📈 Sev issues Trend View")
     
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3 = st.columns([1.5, 1.0, 1.15])
     
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
             chart = (
                 alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .mark_bar(color="#7ec8ff")
                 .encode(
-                    x=alt.X("L1 Resolved %:Q", title="L1 %", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=[
-                        "PODS",
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    ],
+                    x=alt.X(
+                        "L1_Resolved_Pct:Q",
+                        title="L1 %",
+                        scale=alt.Scale(domain=[0, 100]),
+                    ),
+                    y=alt.Y(
+                        "PODS:N",
+                        sort="-x",
+                        title=None,
+                        axis=alt.Axis(
+                            labelLimit=180,
+                            labelPadding=8,
+                            labelFontSize=12,
+                        ),
+                    ),
+                    tooltip=["PODS", "L1_Resolved_Pct"],
                 )
-                .properties(height=260)
+                .properties(
+                    height=250,
+                    width=320,
+                )
             )
             st.altair_chart(chart, use_container_width=True)
     
@@ -1639,13 +1651,28 @@ with tab4:
             st.markdown("**🚨 POD Total Issues**")
             chart = (
                 alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .mark_bar(color="#7ec8ff")
                 .encode(
-                    x=alt.X("Total Issues:Q", title="Issues"),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
-                    tooltip=["PODS", alt.Tooltip("Total Issues:Q", title="Total Issues")],
+                    x=alt.X(
+                        "Total_Issues:Q",
+                        title="Issues",
+                    ),
+                    y=alt.Y(
+                        "PODS:N",
+                        sort="-x",
+                        title=None,
+                        axis=alt.Axis(
+                            labelLimit=180,
+                            labelPadding=8,
+                            labelFontSize=12,
+                        ),
+                    ),
+                    tooltip=["PODS", "Total_Issues"],
                 )
-                .properties(height=260)
+                .properties(
+                    height=250,
+                    width=260,
+                )
             )
             st.altair_chart(chart, use_container_width=True)
     
@@ -1670,24 +1697,38 @@ with tab4:
                 alt.Chart(sev_long)
                 .mark_bar()
                 .encode(
-                    x=alt.X("Count:Q", title="Issues"),
-                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    x=alt.X(
+                        "Count:Q",
+                        title="Issues",
+                    ),
+                    y=alt.Y(
+                        "PODS:N",
+                        sort="-x",
+                        title=None,
+                        axis=alt.Axis(
+                            labelLimit=180,
+                            labelPadding=8,
+                            labelFontSize=12,
+                        ),
+                    ),
                     color=alt.Color(
                         "Severity:N",
                         title="Severity",
                         legend=alt.Legend(
                             orient="bottom",
                             direction="horizontal",
-                            titleOrient="left",
                         ),
                     ),
                     tooltip=[
-                        alt.Tooltip("PODS:N", title="POD"),
-                        alt.Tooltip("Severity:N", title="Severity"),
-                        alt.Tooltip("Count:Q", title="Count"),
+                        "PODS",
+                        "Severity",
+                        "Count",
                     ],
                 )
-                .properties(height=260)
+                .properties(
+                    height=250,
+                    width=300,
+                )
             )
         
             st.altair_chart(chart, use_container_width=True)
