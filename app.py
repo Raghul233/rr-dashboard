@@ -1617,8 +1617,8 @@ with tab4:
 
         c1, c2, c3 = st.columns(3, gap="large")
         
-        chart_width = 285
-        chart_height = 240
+        chart_width = 390
+        chart_height = 270
         
         common_y_axis = alt.Y(
             "PODS:N",
@@ -1627,13 +1627,17 @@ with tab4:
             axis=alt.Axis(
                 labelLimit=200,
                 labelPadding=8,
-                labelFontSize=10,
+                labelFontSize=12,
             ),
         )
         
-        # -------------------------------
-        # Chart 1: POD L1 Resolved %
-        # -------------------------------
+        common_padding = {
+            "left": 65,
+            "right": 10,
+            "top": 5,
+            "bottom": 40,
+        }
+        
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
         
@@ -1645,7 +1649,7 @@ with tab4:
                         "L1 Resolved %:Q",
                         title="L1 %",
                         scale=alt.Scale(domain=[0, 100]),
-                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
+                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
                     ),
                     y=common_y_axis,
                     tooltip=[
@@ -1657,15 +1661,12 @@ with tab4:
                 .properties(
                     width=chart_width,
                     height=chart_height,
-                    padding={"left": 85, "right": 5, "top": 5, "bottom": 35},
+                    padding=common_padding,
                 )
             )
         
             st.altair_chart(chart_l1, use_container_width=False)
         
-        # -------------------------------
-        # Chart 2: POD Total Issues
-        # -------------------------------
         with c2:
             st.markdown("**🚨 POD Total Issues**")
         
@@ -1676,7 +1677,7 @@ with tab4:
                     x=alt.X(
                         "Total Issues:Q",
                         title="Issues",
-                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
+                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
                     ),
                     y=common_y_axis,
                     tooltip=[
@@ -1687,15 +1688,12 @@ with tab4:
                 .properties(
                     width=chart_width,
                     height=chart_height,
-                    padding={"left": 85, "right": 5, "top": 5, "bottom": 35},
+                    padding=common_padding,
                 )
             )
         
             st.altair_chart(chart_total, use_container_width=False)
         
-        # -------------------------------
-        # Chart 3: Severity Split by POD
-        # -------------------------------
         with c3:
             st.markdown("**📊 Severity Split by POD**")
         
@@ -1720,7 +1718,7 @@ with tab4:
                     x=alt.X(
                         "Count:Q",
                         title="Issues",
-                        axis=alt.Axis(labelFontSize=10, titleFontSize=11),
+                        axis=alt.Axis(labelFontSize=11, titleFontSize=12),
                     ),
                     y=common_y_axis,
                     color=alt.Color(
@@ -1742,7 +1740,12 @@ with tab4:
                 .properties(
                     width=chart_width,
                     height=chart_height,
-                    padding={"left": 85, "right": 5, "top": 5, "bottom": 45},
+                    padding={
+                        "left": 65,
+                        "right": 10,
+                        "top": 5,
+                        "bottom": 55,
+                    },
                 )
             )
         
