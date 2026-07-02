@@ -1244,7 +1244,7 @@ with tab4:
     # -------------------------------
     # Leadership Trend View
     # -------------------------------
-    st.markdown("## 📈 Sev issues Trend View")
+    st.markdown("## 📈 Sev Issues Trend View")
 
     c1, c2, c3 = st.columns(3)
 
