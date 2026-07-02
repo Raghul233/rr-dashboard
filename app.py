@@ -1634,9 +1634,9 @@ with tab4:
                         sort="-x",
                         title=None,
                         axis=alt.Axis(
-                            labelLimit=180,
-                            labelPadding=8,
-                            labelFontSize=12,
+                            labelLimit=150,
+                            labelPadding=6,
+                            labelFontSize=11,
                         ),
                     ),
                     tooltip=[
@@ -1668,9 +1668,9 @@ with tab4:
                         sort="-x",
                         title=None,
                         axis=alt.Axis(
-                            labelLimit=180,
-                            labelPadding=8,
-                            labelFontSize=12,
+                            labelLimit=150,
+                            labelPadding=6,
+                            labelFontSize=11,
                         ),
                     ),
                     tooltip=[
@@ -1715,9 +1715,9 @@ with tab4:
                         sort="-x",
                         title=None,
                         axis=alt.Axis(
-                            labelLimit=180,
-                            labelPadding=8,
-                            labelFontSize=12,
+                            labelLimit=150,
+                            labelPadding=6,
+                            labelFontSize=11,
                         ),
                     ),
                     color=alt.Color(
@@ -1739,7 +1739,7 @@ with tab4:
                     width=280,
             )
         
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart)
         
         st.divider()
         # =====================================================
