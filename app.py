@@ -1502,7 +1502,7 @@ with tab4:
             f"""
             <div style="padding-top:10px; padding-bottom:10px;">
                 <h1 style="font-size:52px; margin-bottom:8px; font-weight:900;">
-                    🌟 L1 Ops Performance — {selected_year}
+                    🌟 L1 Ops Performance — {selected_year} | {export_month_label}
                 </h1>
                 <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
                     Performance Insights & Its Graphics |
