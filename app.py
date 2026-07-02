@@ -1741,7 +1741,7 @@ with tab4:
                     width=chart_width,
                     height=chart_height,
                     padding={
-                        "left": 80,
+                        "left": 70,
                         "right": 10,
                         "top": 5,
                         "bottom": 55,
