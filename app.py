@@ -865,7 +865,7 @@ with tab3:
 with tab4:
     import altair as alt
     import streamlit.components.v1 as components
-
+    import textwrap
     st.markdown(f"# 🌟 L1 Ops Performance — {selected_year}")
     st.caption(
         "Leadership snapshot showing POD performance, L1 resolution efficiency, people contribution, "
