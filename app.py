@@ -1096,7 +1096,7 @@ with tab4:
                     l1_delta_color = "#f87171"
 
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <div style="
             background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
             border-radius:20px;
@@ -1104,18 +1104,18 @@ with tab4:
             margin:18px 0 16px 0;
             border:1px solid rgba(74,222,128,0.35);
         ">
-
+    
             <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
                 💡 L1 Impact Created — {report_scope}
             </div>
-
+    
             <div style="
                 display:flex;
                 justify-content:space-between;
                 align-items:flex-end;
                 margin-top:10px;
             ">
-
+    
                 <div style="
                     font-size:58px;
                     font-weight:900;
@@ -1124,7 +1124,7 @@ with tab4:
                 ">
                     {l1_pct:.1f}% resolved within L1
                 </div>
-
+    
                 <div style="
                     text-align:right;
                     font-size:22px;
@@ -1135,9 +1135,9 @@ with tab4:
                 ">
                     {l1_delta_text}
                 </div>
-
+    
             </div>
-
+    
             <div style="
                 font-size:16px;
                 color:#dcfce7;
@@ -1147,9 +1147,9 @@ with tab4:
                 L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
                 reducing L2 dependency and saving escalation bandwidth.
             </div>
-
+    
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
     # -------------------------------
