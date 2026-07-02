@@ -1505,7 +1505,7 @@ with tab4:
                     🌟 L1 Ops Performance — {selected_year} | {export_month_label}
                 </h1>
                 <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                    Performance Insights & Its Graphics |
+                    Showing POD performance, L1 resolution efficiency, people contribution, and L2 effort saved through L1 ownership |
                     Month: <b>{export_month_label}</b>
                 </div>
             </div>
