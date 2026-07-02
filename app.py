@@ -1614,11 +1614,12 @@ with tab4:
         # Leadership Trend View
         # -------------------------------
         st.markdown("## 📈 Sev issues Trend View")
-    
+
         c1, c2, c3 = st.columns([1.5, 1.0, 1.15])
-    
+        
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
+        
             chart = (
                 alt.Chart(pod_master)
                 .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
@@ -1646,16 +1647,18 @@ with tab4:
                 )
                 .properties(height=250)
             )
+        
             st.altair_chart(chart, use_container_width=True)
-    
+        
         with c2:
             st.markdown("**🚨 POD Total Issues**")
+        
             chart = (
                 alt.Chart(pod_master)
-                .mark_bar(color="#7ec8ff")
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
                 .encode(
                     x=alt.X(
-                        "Total_Issues:Q",
+                        "Total Issues:Q",
                         title="Issues",
                     ),
                     y=alt.Y(
@@ -1668,15 +1671,16 @@ with tab4:
                             labelFontSize=12,
                         ),
                     ),
-                    tooltip=["PODS", "Total_Issues"],
+                    tooltip=[
+                        alt.Tooltip("PODS:N", title="POD"),
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                    ],
                 )
-                .properties(
-                    height=250,
-                    width=260,
-                )
+                .properties(height=250)
             )
+        
             st.altair_chart(chart, use_container_width=True)
-    
+        
         with c3:
             st.markdown("**📊 Severity Split by POD**")
         
@@ -1721,15 +1725,12 @@ with tab4:
                         ),
                     ),
                     tooltip=[
-                        "PODS",
-                        "Severity",
-                        "Count",
+                        alt.Tooltip("PODS:N", title="POD"),
+                        alt.Tooltip("Severity:N", title="Severity"),
+                        alt.Tooltip("Count:Q", title="Count"),
                     ],
                 )
-                .properties(
-                    height=250,
-                    width=300,
-                )
+                .properties(height=250)
             )
         
             st.altair_chart(chart, use_container_width=True)
