@@ -1632,7 +1632,7 @@ with tab4:
         )
         
         common_padding = {
-            "left": 75,
+            "left": 60,
             "right": 10,
             "top": 5,
             "bottom": 40,
@@ -1741,7 +1741,7 @@ with tab4:
                     width=chart_width,
                     height=chart_height,
                     padding={
-                        "left": 70,
+                        "left": 60,
                         "right": 10,
                         "top": 5,
                         "bottom": 55,
