@@ -1591,6 +1591,73 @@ with tab4:
                     )
 
         st.divider()
+
+        # -------------------------------
+        # Leadership Trend View
+        # -------------------------------
+        st.markdown("## 📈 Sev issues Trend View")
+    
+        c1, c2, c3 = st.columns(3)
+    
+        with c1:
+            st.markdown("**🏆 POD L1 Resolved %**")
+            chart = (
+                alt.Chart(pod_master)
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .encode(
+                    x=alt.X("L1 Resolved %:Q", title="L1 %", scale=alt.Scale(domain=[0, 100])),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=[
+                        "PODS",
+                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
+                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
+                    ],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart, use_container_width=True)
+    
+        with c2:
+            st.markdown("**🚨 POD Total Issues**")
+            chart = (
+                alt.Chart(pod_master)
+                .mark_bar(cornerRadiusTopRight=6, cornerRadiusBottomRight=6)
+                .encode(
+                    x=alt.X("Total Issues:Q", title="Issues"),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    tooltip=["PODS", alt.Tooltip("Total Issues:Q", title="Total Issues")],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart, use_container_width=True)
+    
+        with c3:
+            st.markdown("**📊 Severity Split by POD**")
+            sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
+                id_vars="PODS",
+                value_vars=["Sev2_Received", "Sev3_Received"],
+                var_name="Severity",
+                value_name="Count",
+            )
+            sev_long["Severity"] = sev_long["Severity"].replace(
+                {"Sev2_Received": "Sev 2", "Sev3_Received": "Sev 3"}
+            )
+    
+            chart = (
+                alt.Chart(sev_long)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Count:Q", title="Issues"),
+                    y=alt.Y("PODS:N", sort="-x", title=None),
+                    color=alt.Color("Severity:N", title="Severity"),
+                    tooltip=["PODS", "Severity", "Count"],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart, use_container_width=True)
+    
+        st.divider()
+
         # =====================================================
         # POD + PEOPLE PERFORMANCE SIDE BY SIDE
         # =====================================================
