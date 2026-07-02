@@ -1723,12 +1723,13 @@ with tab4:
                     y=common_y_axis,
                     color=alt.Color(
                         "Severity:N",
-                        title="Severity",
                         legend=alt.Legend(
                             orient="bottom",
                             direction="horizontal",
-                            titleFontSize=10,
+                            title=None,
                             labelFontSize=10,
+                            symbolSize=120,
+                            columns=3,
                         ),
                     ),
                     tooltip=[
