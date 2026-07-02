@@ -1723,14 +1723,7 @@ with tab4:
                     y=common_y_axis,
                     color=alt.Color(
                         "Severity:N",
-                        legend=alt.Legend(
-                            orient="bottom",
-                            direction="horizontal",
-                            title=None,
-                            labelFontSize=10,
-                            symbolSize=120,
-                            columns=3,
-                        ),
+                        legend=None,
                     ),
                     tooltip=[
                         alt.Tooltip("PODS:N", title="POD"),
