@@ -1067,6 +1067,34 @@ with tab4:
     # -------------------------------
     # Impact Banner
     # -------------------------------
+
+    l1_delta_text = ""
+    l1_delta_color = "#AEB6C1"
+
+    if master_month_filter != "All":
+        current_month_idx = MONTH_ORDER.index(master_month_filter)
+
+        if current_month_idx > 0:
+            prev_month = MONTH_ORDER[current_month_idx - 1]
+
+            prev_df = pod_year_mv[
+                pod_year_mv["Month"].astype(str) == prev_month
+            ].copy()
+
+            if not prev_df.empty:
+                prev_total = int(prev_df["Total Issues"].sum())
+                prev_l1 = int(prev_df["L1 Resolved"].sum())
+                prev_l1_pct = round((prev_l1 / prev_total * 100), 1) if prev_total else 0
+
+                delta = round(l1_pct - prev_l1_pct, 1)
+
+                if delta >= 0:
+                    l1_delta_text = f"▲ +{delta:.1f}% vs {prev_month.title()}"
+                    l1_delta_color = "#4ade80"
+                else:
+                    l1_delta_text = f"▼ {delta:.1f}% vs {prev_month.title()}"
+                    l1_delta_color = "#f87171"
+
     st.markdown(
         f"""
         <div style="
@@ -1076,24 +1104,27 @@ with tab4:
             margin:18px 0 16px 0;
             border:1px solid rgba(74,222,128,0.35);
         ">
+
             <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
                 💡 L1 Impact Created — {report_scope}
             </div>
+
             <div style="
                 display:flex;
                 justify-content:space-between;
                 align-items:flex-end;
                 margin-top:10px;
             ">
-            
+
                 <div style="
                     font-size:58px;
                     font-weight:900;
                     line-height:1;
+                    color:white;
                 ">
                     {l1_pct:.1f}% resolved within L1
                 </div>
-            
+
                 <div style="
                     text-align:right;
                     font-size:22px;
@@ -1104,12 +1135,23 @@ with tab4:
                 ">
                     {l1_delta_text}
                 </div>
-            
+
             </div>
+
+            <div style="
+                font-size:16px;
+                color:#dcfce7;
+                margin-top:14px;
+                font-weight:600;
+            ">
+                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
+                reducing L2 dependency and saving escalation bandwidth.
+            </div>
+
+        </div>
         """,
         unsafe_allow_html=True,
     )
-
     # -------------------------------
     # KPI Cards
     # -------------------------------
