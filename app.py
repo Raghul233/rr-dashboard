@@ -1466,7 +1466,7 @@ with tab4:
         title_left, legend_right = st.columns([1.4, 1])
 
         with title_left:
-            st.subheader("🧩 POD Performance Command Center")
+            st.subheader("🧩 POD Performance Graphics")
 
         with legend_right:
             st.markdown(
