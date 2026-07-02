@@ -1617,20 +1617,23 @@ with tab4:
 
         c1, c2, c3 = st.columns(3, gap="large")
         
+        chart_width = 285
+        chart_height = 240
+        
         common_y_axis = alt.Y(
             "PODS:N",
             sort="-x",
             title=None,
             axis=alt.Axis(
-                labelLimit=120,
-                labelPadding=10,
+                labelLimit=200,
+                labelPadding=8,
                 labelFontSize=10,
             ),
         )
         
-        chart_width = 300
-        chart_height = 240
-        
+        # -------------------------------
+        # Chart 1: POD L1 Resolved %
+        # -------------------------------
         with c1:
             st.markdown("**🏆 POD L1 Resolved %**")
         
@@ -1651,13 +1654,18 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(width=chart_width, height=chart_height)
+                .properties(
+                    width=chart_width,
+                    height=chart_height,
+                    padding={"left": 85, "right": 5, "top": 5, "bottom": 35},
+                )
             )
         
-            spacer, chart_area = st.columns([0.12, 0.88])
-            with chart_area:
-                st.altair_chart(chart_l1, use_container_width=False)
+            st.altair_chart(chart_l1, use_container_width=False)
         
+        # -------------------------------
+        # Chart 2: POD Total Issues
+        # -------------------------------
         with c2:
             st.markdown("**🚨 POD Total Issues**")
         
@@ -1676,13 +1684,18 @@ with tab4:
                         alt.Tooltip("Total Issues:Q", title="Total Issues"),
                     ],
                 )
-                .properties(width=chart_width, height=chart_height)
+                .properties(
+                    width=chart_width,
+                    height=chart_height,
+                    padding={"left": 85, "right": 5, "top": 5, "bottom": 35},
+                )
             )
         
-            spacer, chart_area = st.columns([0.12, 0.88])
-            with chart_area:
-                st.altair_chart(chart_total, use_container_width=False)
+            st.altair_chart(chart_total, use_container_width=False)
         
+        # -------------------------------
+        # Chart 3: Severity Split by POD
+        # -------------------------------
         with c3:
             st.markdown("**📊 Severity Split by POD**")
         
@@ -1726,12 +1739,14 @@ with tab4:
                         alt.Tooltip("Count:Q", title="Count"),
                     ],
                 )
-                .properties(width=chart_width, height=chart_height)
+                .properties(
+                    width=chart_width,
+                    height=chart_height,
+                    padding={"left": 85, "right": 5, "top": 5, "bottom": 45},
+                )
             )
         
-            spacer, chart_area = st.columns([0.12, 0.88])
-            with chart_area:
-                st.altair_chart(chart_severity, use_container_width=False)
+            st.altair_chart(chart_severity, use_container_width=False)
         
         st.divider()
         # =====================================================
