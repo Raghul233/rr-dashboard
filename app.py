@@ -866,7 +866,15 @@ with tab4:
     import altair as alt
     import streamlit.components.v1 as components
 
-    st.markdown(f"# 🌟 L1 Ops Performance — {selected_year} | {export_month_label}")
+    if selected_month == "All":
+        export_month_label = "All / YTD"
+    else:
+        export_month_label = selected_month
+
+    st.markdown(
+        f"# 🌟 L1 Ops Performance — {selected_year} | {export_month_label}"
+    )
+
     st.caption(
         "Leadership snapshot showing POD performance, L1 resolution efficiency, people contribution, "
         "and L2 effort saved through L1 ownership."
