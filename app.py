@@ -1744,7 +1744,7 @@ with tab4:
                         "left": 30,
                         "right": 10,
                         "top": 5,
-                        "bottom": 35,
+                        "bottom": 30,
                     },
                 )
             )
