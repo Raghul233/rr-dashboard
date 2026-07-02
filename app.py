@@ -1067,91 +1067,101 @@ with tab4:
     # -------------------------------
     # Impact Banner
     # -------------------------------
-
+    
     l1_delta_text = ""
     l1_delta_color = "#AEB6C1"
-
+    
+    # Show month-over-month improvement only for individual months
     if master_month_filter != "All":
         current_month_idx = MONTH_ORDER.index(master_month_filter)
-
+    
         if current_month_idx > 0:
             prev_month = MONTH_ORDER[current_month_idx - 1]
-
+    
             prev_df = pod_year_mv[
                 pod_year_mv["Month"].astype(str) == prev_month
             ].copy()
-
+    
             if not prev_df.empty:
                 prev_total = int(prev_df["Total Issues"].sum())
                 prev_l1 = int(prev_df["L1 Resolved"].sum())
-                prev_l1_pct = round((prev_l1 / prev_total * 100), 1) if prev_total else 0
-
+    
+                prev_l1_pct = (
+                    round((prev_l1 / prev_total) * 100, 1)
+                    if prev_total > 0
+                    else 0
+                )
+    
                 delta = round(l1_pct - prev_l1_pct, 1)
-
-                if delta >= 0:
+    
+                if delta > 0:
                     l1_delta_text = f"▲ +{delta:.1f}% vs {prev_month.title()}"
                     l1_delta_color = "#4ade80"
-                else:
-                    l1_delta_text = f"▼ {delta:.1f}% vs {prev_month.title()}"
+                elif delta < 0:
+                    l1_delta_text = f"▼ {abs(delta):.1f}% vs {prev_month.title()}"
                     l1_delta_color = "#f87171"
-
-    st.markdown(
-        textwrap.dedent(f"""
+                else:
+                    l1_delta_text = f"No change vs {prev_month.title()}"
+                    l1_delta_color = "#AEB6C1"
+    
+    banner_html = f"""
+    <div style="
+        background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+        border-radius:20px;
+        padding:24px 30px;
+        margin:18px 0 18px 0;
+        border:1px solid rgba(74,222,128,0.35);
+    ">
+    
         <div style="
-            background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-            border-radius:20px;
-            padding:24px 30px;
-            margin:18px 0 16px 0;
-            border:1px solid rgba(74,222,128,0.35);
+            font-size:18px;
+            color:#bbf7d0;
+            font-weight:800;
+        ">
+            💡 L1 Impact Created — {report_scope}
+        </div>
+    
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-end;
+            margin-top:12px;
         ">
     
-            <div style="font-size:18px;color:#bbf7d0;font-weight:800;">
-                💡 L1 Impact Created — {report_scope}
+            <div style="
+                font-size:58px;
+                font-weight:900;
+                color:white;
+                line-height:1;
+            ">
+                {l1_pct:.1f}% resolved within L1
             </div>
     
             <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:flex-end;
-                margin-top:10px;
+                text-align:right;
+                font-size:22px;
+                font-weight:800;
+                color:{l1_delta_color};
+                padding-bottom:8px;
             ">
-    
-                <div style="
-                    font-size:58px;
-                    font-weight:900;
-                    line-height:1;
-                    color:white;
-                ">
-                    {l1_pct:.1f}% resolved within L1
-                </div>
-    
-                <div style="
-                    text-align:right;
-                    font-size:22px;
-                    font-weight:800;
-                    color:{l1_delta_color};
-                    line-height:1.2;
-                    padding-bottom:6px;
-                ">
-                    {l1_delta_text}
-                </div>
-    
-            </div>
-    
-            <div style="
-                font-size:16px;
-                color:#dcfce7;
-                margin-top:14px;
-                font-weight:600;
-            ">
-                L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
-                reducing L2 dependency and saving escalation bandwidth.
+                {l1_delta_text}
             </div>
     
         </div>
-        """),
-        unsafe_allow_html=True,
-    )
+    
+        <div style="
+            margin-top:16px;
+            color:#dcfce7;
+            font-size:17px;
+            font-weight:600;
+        ">
+            L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducing L2 dependency and saving escalation bandwidth.
+        </div>
+    
+    </div>
+    """
+    
+    st.markdown(banner_html, unsafe_allow_html=True)
     # -------------------------------
     # KPI Cards
     # -------------------------------
