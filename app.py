@@ -1651,31 +1651,48 @@ with tab4:
     
         with c3:
             st.markdown("**📊 Severity Split by POD**")
+        
             sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
                 id_vars="PODS",
                 value_vars=["Sev2_Received", "Sev3_Received"],
                 var_name="Severity",
                 value_name="Count",
             )
+        
             sev_long["Severity"] = sev_long["Severity"].replace(
-                {"Sev2_Received": "Sev 2", "Sev3_Received": "Sev 3"}
+                {
+                    "Sev2_Received": "Sev 2",
+                    "Sev3_Received": "Sev 3",
+                }
             )
-    
+        
             chart = (
                 alt.Chart(sev_long)
                 .mark_bar()
                 .encode(
                     x=alt.X("Count:Q", title="Issues"),
                     y=alt.Y("PODS:N", sort="-x", title=None),
-                    color=alt.Color("Severity:N", title="Severity"),
-                    tooltip=["PODS", "Severity", "Count"],
+                    color=alt.Color(
+                        "Severity:N",
+                        title="Severity",
+                        legend=alt.Legend(
+                            orient="bottom",
+                            direction="horizontal",
+                            titleOrient="left",
+                        ),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("PODS:N", title="POD"),
+                        alt.Tooltip("Severity:N", title="Severity"),
+                        alt.Tooltip("Count:Q", title="Count"),
+                    ],
                 )
                 .properties(height=260)
             )
+        
             st.altair_chart(chart, use_container_width=True)
-    
+        
         st.divider()
-
         # =====================================================
         # POD + PEOPLE PERFORMANCE SIDE BY SIDE
         # =====================================================
