@@ -183,7 +183,7 @@ selected_year = st.selectbox("📅 Select Year", years, index=len(years) - 1)
 dfy = df[df["Year"] == selected_year].copy()
 
 # ---------- Tabs (Leaderboard first) ----------
-tab1, tab2, tab3, tab4 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Performance", "🌟 L1 Master View"])
+tab1, tab2, tab3, tab4 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Team Performance", "🌟 L1 Master View"])
 
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
@@ -603,7 +603,7 @@ def normalize_pod_perf(df_in: pd.DataFrame) -> pd.DataFrame:
 with tab3:
     import altair as alt
 
-    st.subheader(f"📈 Performance — {selected_year}")
+    st.subheader(f"📈 Team Performance — {selected_year}")
     st.caption(
         "Sev-2 shown as **Contribution %**; Sev-3 shown as **Resolution / RCA %**. "
         "Percentages are computed using Team received volumes."
