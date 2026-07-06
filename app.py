@@ -2589,41 +2589,41 @@ st.markdown(banner_html, unsafe_allow_html=True)
     # KPI Cards
     # -------------------------------
     k1, k2, k3, k4 = st.columns(4)
-        with k1:
-            _mv_card(
-                "TEAM TOTAL ISSUES",
-                team_total_received,
-                "Sev 2 + Sev 3 received",
-                "#ffffff",
-                "🚨",
-            )
-        
-        with k2:
-            _mv_card(
-                "INDIVIDUAL RESOLVED",
-                indiv_total_resolved,
-                f"{overall_contribution_pct:.1f}% of team issues",
-                "#4ade80",
-                "✅",
-            )
-        
-        with k3:
-            _mv_card(
-                "SEV-3 CONTRIBUTION",
-                f"{indiv_sev3_resolved} / {team_sev3_received}",
-                f"{sev3_contribution_pct:.1f}% of team Sev-3",
-                "#60a5fa",
-                "📘",
-            )
-        
-        with k4:
-            _mv_card(
-                "SEV-2 CONTRIBUTION",
-                f"{indiv_sev2_resolved} / {team_sev2_received}",
-                f"{sev2_contribution_pct:.1f}% of team Sev-2",
-                "#a78bfa",
-                "📕",
-            )
+    with k1:
+        _mv_card(
+            "TEAM TOTAL ISSUES",
+            team_total_received,
+            "Sev 2 + Sev 3 received",
+            "#ffffff",
+            "🚨",
+        )
+    
+    with k2:
+        _mv_card(
+            "INDIVIDUAL RESOLVED",
+            indiv_total_resolved,
+            f"{overall_contribution_pct:.1f}% of team issues",
+            "#4ade80",
+            "✅",
+        )
+    
+    with k3:
+        _mv_card(
+            "SEV-3 CONTRIBUTION",
+            f"{indiv_sev3_resolved} / {team_sev3_received}",
+            f"{sev3_contribution_pct:.1f}% of team Sev-3",
+            "#60a5fa",
+            "📘",
+        )
+    
+    with k4:
+        _mv_card(
+            "SEV-2 CONTRIBUTION",
+            f"{indiv_sev2_resolved} / {team_sev2_received}",
+            f"{sev2_contribution_pct:.1f}% of team Sev-2",
+            "#a78bfa",
+            "📕",
+        )
 
     st.divider()
 
