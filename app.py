@@ -2699,7 +2699,13 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
         export_month_label = (
             "All / YTD"
             if indiv_month_filter == "All"
-            else indiv_month_filter.title()
+            else indiv_month_filter.upper()
+        )
+        
+        export_people_label = (
+            "ALL PEOPLE"
+            if len(indiv_people_filter) != 1
+            else indiv_people_filter[0].upper()
         )
 
         st.markdown(
@@ -2707,7 +2713,7 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
 <div style="padding-top:10px;padding-bottom:10px;">
 
 <h1 style="font-size:52px;margin-bottom:8px;font-weight:900;">
-👤 Individual Performance — {selected_year} | {export_month_label}
+👤 Individual Performance — {selected_year} | {export_month_label} | {export_people_label}
 </h1>
 
 <div style="font-size:20px;color:#AEB6C1;margin-bottom:25px;">
