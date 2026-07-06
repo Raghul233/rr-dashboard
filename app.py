@@ -2513,27 +2513,42 @@ with tab5:
     best_pod = pod_master.iloc[0]["PODS"]
 
     # -------------------------------
-    # People Summary for Individual View
+    # POD Summary for Individual View
     # -------------------------------
-    people_master = (
-        people_year.groupby("Name", as_index=False)
+    
+    # If people file does not have PODS column, create a fallback grouping
+    if "PODS" not in people_year.columns:
+        people_year["PODS"] = "Individual"
+    
+    pod_master = (
+        people_year.groupby("PODS", as_index=False)
         .agg(
             {
-                "Sev-2 Contributed": "sum",
-                "Sev-3 Contributed": "sum",
+                "Sev2_Contributed": "sum",
+                "Sev3_Resolved_RCA": "sum",
             }
         )
     )
-
-    people_master["Total Contribution"] = (
-        people_master["Sev-2 Contributed"]
-        + people_master["Sev-3 Contributed"]
+    
+    pod_master["Sev2_Received"] = pod_master["Sev2_Contributed"]
+    pod_master["Sev3_Received"] = pod_master["Sev3_Resolved_RCA"]
+    pod_master["Sev3_Contributed"] = pod_master["Sev3_Resolved_RCA"]
+    
+    pod_master["Total Issues"] = (
+        pod_master["Sev2_Received"] + pod_master["Sev3_Received"]
     )
-
-    people_master = people_master.sort_values(
-        "Total Contribution",
+    
+    pod_master["L1 Resolved"] = pod_master["Total Issues"]
+    pod_master["Moved to L2"] = 0
+    pod_master["L1 Resolved %"] = 100.0
+    pod_master["Moved to L2 %"] = 0.0
+    
+    pod_master = pod_master.sort_values(
+        "Total Issues",
         ascending=False,
     )
+    
+    best_pod = pod_master.iloc[0]["PODS"]
     # -------------------------------
     # Impact Banner
     # -------------------------------
