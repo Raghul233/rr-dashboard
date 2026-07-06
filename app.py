@@ -2447,7 +2447,7 @@ with tab5:
         .agg(
             {
                 "Sev-2 Contributed": "sum",
-                "Sev-3 Contributed": "sum",
+                "Sev3_Resolved_RCA": "sum",
             }
         )
     )
