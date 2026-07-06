@@ -2446,7 +2446,7 @@ with tab5:
         people_year.groupby("PODS", as_index=False)
         .agg(
             {
-                "Sev-2 Contributed": "sum",
+                "Sev2 Contributed": "sum",
                 "Sev3_Resolved_RCA": "sum",
             }
         )
