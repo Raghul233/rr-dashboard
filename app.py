@@ -183,7 +183,7 @@ selected_year = st.selectbox("📅 Select Year", years, index=len(years) - 1)
 dfy = df[df["Year"] == selected_year].copy()
 
 # ---------- Tabs (Leaderboard first) ----------
-tab1, tab2, tab3, tab4 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Team Performance", "🌟 L1 Master View", "👤 Individual Performance"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏅 Leaderboard", "📊 Dashboard", "📈 Team Performance", "🌟 L1 Master View", "👤 Individual Performance"])
 
 # ---------- Tab 1: Leaderboard ----------
 with tab1:
