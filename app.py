@@ -985,41 +985,53 @@ with tab4:
         if m in pod_year_mv["Month"].astype(str).unique().tolist()
     ]
 
-    # ------------------------------- 
-    # Filters 
-    # ------------------------------- 
-    with st.container(border=True): 
-        f1, f2 = st.columns([1, 1]) 
-        
-        with f1: master_month_filter = st.selectbox( 
-            "📅 Select Month", 
-            ["All"] + available_months_mv, 
-            index=0, 
-            key="master_view_month_filter", ) 
-            
-        with f2: available_pods_mv =
-            sorted(pod_year_mv["PODS"].dropna().astype(str).unique().tolist()) 
-            master_pod_filter = st.multiselect( 
-                "🧩 Select POD(s)", 
-                available_pods_mv, 
-                default=available_pods_mv, 
-                key="master_view_pod_filter", 
-            ) 
-        mv_view = pod_year_mv.copy() 
-        
-        if master_month_filter != "All": 
-            mv_view = mv_view[mv_view["Month"].astype(str) == 
-            master_month_filter] 
-            
-        if master_pod_filter: 
-            mv_view = mv_view[mv_view["PODS"].isin(master_pod_filter)] 
-            
-        if mv_view.empty: 
-            st.info("No data available for selected filters.") 
-            st.stop() 
-            
-        report_scope = "YTD" if master_month_filter == "All" else 
-        master_month_filter.title()
+    # -------------------------------
+    # Filters
+    # -------------------------------
+    with st.container(border=True):
+        f1, f2 = st.columns([1, 1])
+    
+        with f1:
+            master_month_filter = st.selectbox(
+                "📅 Select Month",
+                ["All"] + available_months_mv,
+                index=0,
+                key="master_view_month_filter",
+            )
+    
+        with f2:
+            available_pods_mv = sorted(
+                pod_year_mv["PODS"].dropna().astype(str).unique().tolist()
+            )
+    
+            master_pod_filter = st.multiselect(
+                "🧩 Select POD(s)",
+                available_pods_mv,
+                default=available_pods_mv,
+                key="master_view_pod_filter",
+            )
+    
+        mv_view = pod_year_mv.copy()
+    
+        if master_month_filter != "All":
+            mv_view = mv_view[
+                mv_view["Month"].astype(str) == master_month_filter
+            ]
+    
+        if master_pod_filter:
+            mv_view = mv_view[
+                mv_view["PODS"].isin(master_pod_filter)
+            ]
+    
+        if mv_view.empty:
+            st.info("No data available for selected filters.")
+            st.stop()
+    
+        report_scope = (
+            "YTD"
+            if master_month_filter == "All"
+            else master_month_filter.title()
+        )
     # -------------------------------
     # Metrics
     # -------------------------------
