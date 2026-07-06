@@ -989,7 +989,7 @@ with tab4:
     # Filters
     # -------------------------------
     with st.container(border=True):
-        f1, f2, f3 = st.columns([0.22, 1.13, 1.05])
+        f1, f2, f3 = st.columns([0.5, 1.5])
     
         with f1:
             master_month_filter = st.selectbox(
