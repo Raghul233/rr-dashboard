@@ -2477,7 +2477,7 @@ with tab5:
     # POD Summary for Individual View
     # -------------------------------
     
-    # If people file does not have PODS column, create a fallback grouping
+    # People file does not have PODS, so create fallback POD grouping
     if "PODS" not in people_year.columns:
         people_year["PODS"] = "Individual"
     
@@ -2501,6 +2501,7 @@ with tab5:
     
     pod_master["L1 Resolved"] = pod_master["Total Issues"]
     pod_master["Moved to L2"] = 0
+    
     pod_master["L1 Resolved %"] = 100.0
     pod_master["Moved to L2 %"] = 0.0
     
