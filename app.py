@@ -2356,14 +2356,24 @@ L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducin
         height=70,
     )
 # ---------- Tab 5: "👤 Individual Performance" ----------
+# =====================================================
+# TAB 5: INDIVIDUAL PERFORMANCE
+# =====================================================
 with tab5:
+    import altair as alt
+    import streamlit.components.v1 as components
+    import pandas as pd
+
     st.markdown(f"# 👤 Individual Performance — {selected_year}")
 
     st.caption(
-        "Individual performance snapshot showing L1 resolution efficiency, POD contribution, "
-        "severity ownership, and L2 effort saved through individual ownership."
+        "Individual performance snapshot showing L1 resolution efficiency, severity ownership, "
+        "and contribution by selected team member."
     )
 
+    # -------------------------------
+    # Load People Data
+    # -------------------------------
     people_raw = load_perf_csv(
         PERF_PEOPLE_FILE,
         f"Upload {PERF_PEOPLE_FILE}",
@@ -2376,53 +2386,80 @@ with tab5:
     ].copy()
 
     # -------------------------------
+    # Safe column mapping
+    # -------------------------------
+    if "Sev2_Contributed" not in people_year.columns:
+        if "Sev-2 Contributed" in people_year.columns:
+            people_year["Sev2_Contributed"] = people_year["Sev-2 Contributed"]
+        elif "Sev 2" in people_year.columns:
+            people_year["Sev2_Contributed"] = people_year["Sev 2"]
+        else:
+            people_year["Sev2_Contributed"] = 0
+
+    if "Sev3_Resolved_RCA" not in people_year.columns:
+        if "Sev-3 Contributed" in people_year.columns:
+            people_year["Sev3_Resolved_RCA"] = people_year["Sev-3 Contributed"]
+        elif "Sev3_Contributed" in people_year.columns:
+            people_year["Sev3_Resolved_RCA"] = people_year["Sev3_Contributed"]
+        elif "Sev 3" in people_year.columns:
+            people_year["Sev3_Resolved_RCA"] = people_year["Sev 3"]
+        else:
+            people_year["Sev3_Resolved_RCA"] = 0
+
+    # People CSV does not have PODS, so use fallback grouping
+    people_year["PODS"] = "Individual"
+
+    # -------------------------------
     # Filters
     # -------------------------------
     with st.container(border=True):
         f1, f2 = st.columns([0.7, 1.3])
-    
+
         with f1:
             indiv_month_filter = st.selectbox(
                 "📅 Select Month",
-                ["All"] + sorted(people_year["Month"].dropna().astype(str).unique().tolist()),
+                ["All"] + sorted(
+                    people_year["Month"].dropna().astype(str).unique().tolist()
+                ),
                 index=0,
                 key="individual_month_filter",
             )
-    
+
         if indiv_month_filter != "All":
             people_year = people_year[
                 people_year["Month"].astype(str) == indiv_month_filter
             ]
-    
+
         with f2:
             indiv_people_options = sorted(
                 people_year["Name"].dropna().astype(str).unique().tolist()
             )
-    
+
             indiv_people_filter = st.multiselect(
                 "👤 Select People",
                 indiv_people_options,
                 default=indiv_people_options,
                 key="individual_people_filter",
             )
-    
+
         if indiv_people_filter:
             people_year = people_year[
                 people_year["Name"].isin(indiv_people_filter)
             ]
-    
+
     if people_year.empty:
         st.info("No individual performance data available for selected filters.")
         st.stop()
+
     # -------------------------------
     # Individual Metrics
     # -------------------------------
     sev2_total = int(people_year["Sev2_Contributed"].sum())
     sev3_total = int(people_year["Sev3_Resolved_RCA"].sum())
-    
+
     l1_total = sev2_total + sev3_total
     total_issues = l1_total
-    
+
     l2_total = 0
     l1_pct = 100.0 if total_issues else 0
     l2_pct = 0.0
@@ -2446,17 +2483,14 @@ with tab5:
         people_year.groupby("PODS", as_index=False)
         .agg(
             {
-                "Sev2 Contributed": "sum",
+                "Sev2_Contributed": "sum",
                 "Sev3_Resolved_RCA": "sum",
             }
         )
     )
 
-    pod_master["Sev2_Received"] = pod_master["Sev-2 Contributed"]
-    pod_master["Sev3_Received"] = pod_master["Sev-3 Contributed"]
-    pod_master["Sev2_Contributed"] = pod_master["Sev-2 Contributed"]
-    pod_master["Sev3_Resolved_RCA"] = pod_master["Sev-3 Contributed"]
-
+    pod_master["Sev2_Received"] = pod_master["Sev2_Contributed"]
+    pod_master["Sev3_Received"] = pod_master["Sev3_Resolved_RCA"]
     pod_master["Total Issues"] = (
         pod_master["Sev2_Received"] + pod_master["Sev3_Received"]
     )
@@ -2467,22 +2501,17 @@ with tab5:
     pod_master["Moved to L2 %"] = 0.0
 
     pod_master = pod_master.sort_values(
-        ["Total Issues"],
+        "Total Issues",
         ascending=False,
     )
 
-    best_pod = pod_master.iloc[0]["PODS"]
+    best_pod = selected_person_label
 
     # -------------------------------
-    # POD Summary for Individual View
+    # People Summary
     # -------------------------------
-    
-    # People file does not have PODS, so create fallback POD grouping
-    if "PODS" not in people_year.columns:
-        people_year["PODS"] = "Individual"
-    
-    pod_master = (
-        people_year.groupby("PODS", as_index=False)
+    people_master = (
+        people_year.groupby("Name", as_index=False)
         .agg(
             {
                 "Sev2_Contributed": "sum",
@@ -2490,1031 +2519,187 @@ with tab5:
             }
         )
     )
-    
-    pod_master["Sev2_Received"] = pod_master["Sev2_Contributed"]
-    pod_master["Sev3_Received"] = pod_master["Sev3_Resolved_RCA"]
-    pod_master["Sev3_Contributed"] = pod_master["Sev3_Resolved_RCA"]
-    
-    pod_master["Total Issues"] = (
-        pod_master["Sev2_Received"] + pod_master["Sev3_Received"]
+
+    people_master["Total Contribution"] = (
+        people_master["Sev2_Contributed"]
+        + people_master["Sev3_Resolved_RCA"]
     )
-    
-    pod_master["L1 Resolved"] = pod_master["Total Issues"]
-    pod_master["Moved to L2"] = 0
-    
-    pod_master["L1 Resolved %"] = 100.0
-    pod_master["Moved to L2 %"] = 0.0
-    
-    pod_master = pod_master.sort_values(
-        "Total Issues",
+
+    people_master = people_master.sort_values(
+        "Total Contribution",
         ascending=False,
     )
-    
-    best_pod = pod_master.iloc[0]["PODS"]
+
     # -------------------------------
     # Impact Banner
     # -------------------------------
-    
-    l1_delta_text = ""
-    l1_delta_color = "#AEB6C1"
-    
-    # Show month-over-month improvement only for individual months
-    if master_month_filter != "All":
-        current_month_idx = MONTH_ORDER.index(master_month_filter)
-    
-        if current_month_idx > 0:
-            prev_month = MONTH_ORDER[current_month_idx - 1]
-    
-            prev_df = pod_year_mv[
-                pod_year_mv["Month"].astype(str) == prev_month
-            ].copy()
-    
-            if not prev_df.empty:
-                prev_total = int(prev_df["Total Issues"].sum())
-                prev_l1 = int(prev_df["L1 Resolved"].sum())
-    
-                prev_l1_pct = (
-                    round((prev_l1 / prev_total) * 100, 1)
-                    if prev_total > 0
-                    else 0
-                )
-    
-                delta = round(l1_pct - prev_l1_pct, 1)
-    
-                if delta > 0:
-                    l1_delta_text = f"▲ +{delta:.1f}% vs {prev_month.title()}"
-                    l1_delta_color = "#4ade80"
-                elif delta < 0:
-                    l1_delta_text = f"▼ {abs(delta):.1f}% vs {prev_month.title()}"
-                    l1_delta_color = "#f87171"
-                else:
-                    l1_delta_text = f"No change vs {prev_month.title()}"
-                    l1_delta_color = "#AEB6C1"
-    
     banner_html = f"""<div style="background:linear-gradient(90deg,#052e16,#065f46,#0f766e);border-radius:20px;padding:24px 30px;margin:18px 0 18px 0;border:1px solid rgba(74,222,128,0.35);">
-<div style="font-size:18px;color:#bbf7d0;font-weight:800;">💡 L1 Impact Created — {report_scope}</div>
+<div style="font-size:18px;color:#bbf7d0;font-weight:800;">💡 Individual Impact Created — {report_scope}</div>
 
-<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;">
-<div style="font-size:58px;font-weight:900;color:white;line-height:1;">{l1_pct:.1f}% resolved within L1</div>
-<div style="text-align:right;font-size:22px;font-weight:800;color:{l1_delta_color};padding-bottom:8px;">{l1_delta_text}</div>
+<div style="font-size:58px;font-weight:900;color:white;line-height:1;margin-top:12px;">
+{l1_total} issues resolved within L1
 </div>
 
 <div style="margin-top:16px;color:#dcfce7;font-size:17px;font-weight:600;">
-L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducing L2 dependency and saving escalation bandwidth.
+{selected_person_label} contributed to <b>{sev3_total}</b> Sev-3 and <b>{sev2_total}</b> Sev-2 resolutions.
 </div>
 </div>"""
 
     st.markdown(banner_html, unsafe_allow_html=True)
+
     # -------------------------------
     # KPI Cards
     # -------------------------------
-    k1, k2, k3, k4, k5 = st.columns(5)
+    k1, k2, k3, k4 = st.columns(4)
 
     with k1:
-        _mv_card("TOTAL ISSUES", total_issues, "Sev 2 + Sev 3", "#ffffff", "🚨")
+        _mv_card("TOTAL CONTRIBUTION", total_issues, "Sev 2 + Sev 3", "#ffffff", "🚨")
     with k2:
-        _mv_card("L1 RESOLVED", l1_total, f"{l1_pct:.1f}% within L1", "#4ade80", "✅")
+        _mv_card("SEV-3 RESOLVED", sev3_total, "Resolved by person", "#60a5fa", "✅")
     with k3:
-        _mv_card("MOVED TO L2", l2_total, f"{l2_pct:.1f}% escalated", "#fbbf24", "⬆️")
+        _mv_card("SEV-2 RESOLVED", sev2_total, "Resolved by person", "#a78bfa", "⬆️")
     with k4:
-        _mv_card("SEVERITY SPLIT", f"{sev2_total} / {sev3_total}", "Sev 2 / Sev 3", "#93c5fd", "📊")
-    with k5:
-        _mv_card("TOP RESOLVE POD", best_pod, "Highest L1 resolve %", "#c084fc", "🥇")
+        _mv_card("TOP CONTRIBUTOR", selected_person_label, "Selected person", "#c084fc", "🥇")
 
     st.divider()
 
     # -------------------------------
-    # POD Command Center
+    # Individual Contribution Graphics
     # -------------------------------
-    title_left, legend_right = st.columns([1.4, 1])
+    st.subheader("👤 Individual Contribution Graphics")
 
-    with title_left:
-        st.subheader("🧩 POD Performance Graphics")
-
-    with legend_right:
-        st.markdown(
-            """
-            <div style="text-align:right; font-size:13px; margin-top:8px;">
-                <span style="color:#60a5fa;font-weight:800;">■ Sev-3</span>
-                &nbsp;&nbsp;
-                <span style="color:#a78bfa;font-weight:800;">■ Sev-2</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    chart_people = (
+        alt.Chart(people_master)
+        .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
+        .encode(
+            x=alt.X(
+                "Total Contribution:Q",
+                title="Total Contribution",
+            ),
+            y=alt.Y(
+                "Name:N",
+                sort="-x",
+                title=None,
+            ),
+            tooltip=[
+                alt.Tooltip("Name:N", title="Person"),
+                alt.Tooltip("Sev3_Resolved_RCA:Q", title="Sev-3"),
+                alt.Tooltip("Sev2_Contributed:Q", title="Sev-2"),
+                alt.Tooltip("Total Contribution:Q", title="Total"),
+            ],
         )
-
-    pod_card_cols = st.columns(5)
-
-    for idx, row in pod_master.reset_index(drop=True).iterrows():
-        pod_name = str(row["PODS"])
-
-        total = int(row["Total Issues"])
-        sev2_received = int(row["Sev2_Received"])
-        sev3_received = int(row["Sev3_Received"])
-
-        sev2_l1 = int(row["Sev2_Contributed"])
-        sev3_l1 = int(row["Sev3_Resolved_RCA"])
-
-        sev2_l2 = max(sev2_received - sev2_l1, 0)
-        sev3_l2 = max(sev3_received - sev3_l1, 0)
-
-        l1_total_local = sev2_l1 + sev3_l1
-        l2_total_local = sev2_l2 + sev3_l2
-
-        l1_pct_local = (l1_total_local / total * 100) if total else 0
-        l2_pct_local = (l2_total_local / total * 100) if total else 0
-
-        sev3_l1_pct = (sev3_l1 / total * 100) if total else 0
-        sev2_l1_pct = (sev2_l1 / total * 100) if total else 0
-
-        sev3_l2_pct = (sev3_l2 / total * 100) if total else 0
-        sev2_l2_pct = (sev2_l2 / total * 100) if total else 0
-
-        with pod_card_cols[idx % 5]:
-            with st.container(border=True):
-                st.markdown(
-                    f"""
-                    <div style="
-                        min-height:46px;
-                        font-size:16px;
-                        font-weight:900;
-                        color:white;
-                        margin-bottom:8px;
-                    ">
-                        🧩 {pod_name}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                st.metric("Total", total)
-
-                s1, s2 = st.columns(2)
-                with s1:
-                    st.metric("Sev 2", sev2_received)
-                with s2:
-                    st.metric("Sev 3", sev3_received)
-
-                # L1 segmented bar
-                st.markdown(
-                    f"""
-                    <div style="font-size:12px;font-weight:800;margin-top:8px;">✅ L1 %</div>
-
-                    <div style="
-                        width:100%;
-                        height:9px;
-                        background:#1f2937;
-                        border-radius:999px;
-                        overflow:hidden;
-                        display:flex;
-                        margin-top:6px;
-                    ">
-                        <div style="width:{sev3_l1_pct}%; background:#60a5fa;"></div>
-                        <div style="width:{sev2_l1_pct}%; background:#a78bfa;"></div>
-                    </div>
-
-                    <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:6px;">
-                        {l1_pct_local:.1f}%
-                    </div>
-
-                    <div style="font-size:11px;color:#AEB6C2;">
-                        Sev-3: {sev3_l1} | Sev-2: {sev2_l1}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-                # L2 segmented bar
-                st.markdown(
-                    f"""
-                    <div style="font-size:12px;font-weight:800;margin-top:10px;">⬆️ L2 %</div>
-
-                    <div style="
-                        width:100%;
-                        height:9px;
-                        background:#1f2937;
-                        border-radius:999px;
-                        overflow:hidden;
-                        display:flex;
-                        margin-top:6px;
-                    ">
-                        <div style="width:{sev3_l2_pct}%; background:#60a5fa;"></div>
-                        <div style="width:{sev2_l2_pct}%; background:#a78bfa;"></div>
-                    </div>
-
-                    <div style="font-size:17px;font-weight:900;color:#fbbf24;margin-top:6px;">
-                        {l2_pct_local:.1f}%
-                    </div>
-
-                    <div style="font-size:11px;color:#AEB6C2;">
-                        Sev-3: {sev3_l2} | Sev-2: {sev2_l2}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-    st.divider()
-
-    # -------------------------------
-    # Leadership Trend View
-    # -------------------------------
-    st.markdown("## 📈 Sev issues Trend View")
-    
-    c1, c2, c3 = st.columns([1.1, 1.1, 1.1], gap="medium")
-    
-    chart_width = 445
-    chart_height = 300
-    
-    common_y_axis = alt.Y(
-    "PODS:N",
-    sort="-x",
-    title=None,
-    axis=alt.Axis(
-        labelLimit=200,
-        labelPadding=8,
-        labelFontSize=13,
-    ),
+        .properties(height=280)
     )
-    
-    common_padding = {
-    "left": 20,
-    "right": 10,
-    "top": 5,
-    "bottom": 40,
-    }
-    
-    with c1:
-        st.markdown("**🏆 POD L1 Resolved %**")
-        
-        chart_l1 = (
-            alt.Chart(pod_master)
-            .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-            .encode(
-                x=alt.X(
-                    "L1 Resolved %:Q",
-                    title="L1 %",
-                    scale=alt.Scale(domain=[0, 100]),
-                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                ),
-                y=common_y_axis,
-                tooltip=[
-                    alt.Tooltip("PODS:N", title="POD"),
-                    alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                ],
-            )
-            .properties(
-                width=chart_width,
-                height=chart_height,
-                padding=common_padding,
-            )
-        )
-        
-        st.altair_chart(chart_l1, use_container_width=False)
-    
-    with c2:
-        st.markdown("**🚨 POD Total Issues**")
-        
-        chart_total = (
-            alt.Chart(pod_master)
-            .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-            .encode(
-                x=alt.X(
-                    "Total Issues:Q",
-                    title="Issues",
-                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                ),
-                y=common_y_axis,
-                tooltip=[
-                    alt.Tooltip("PODS:N", title="POD"),
-                    alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                ],
-            )
-            .properties(
-                width=chart_width,
-                height=chart_height,
-                padding=common_padding,
-            )
-        )
-        
-        st.altair_chart(chart_total, use_container_width=False)
-    
-    with c3:
-        st.markdown("**📊 Severity Split by POD**")
-        
-        sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
-            id_vars="PODS",
-            value_vars=["Sev2_Received", "Sev3_Received"],
-            var_name="Severity",
-            value_name="Count",
-        )
-        
-        sev_long["Severity"] = sev_long["Severity"].replace(
-            {
-                "Sev2_Received": "Sev 2",
-                "Sev3_Received": "Sev 3",
-            }
-        )
-        
-        chart_severity = (
-            alt.Chart(sev_long)
-            .mark_bar()
-            .encode(
-                x=alt.X(
-                    "Count:Q",
-                    title="Issues",
-                    axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                ),
-                y=common_y_axis,
-                color=alt.Color(
-                    "Severity:N",
-                    legend=None,
-                ),
-                tooltip=[
-                    alt.Tooltip("PODS:N", title="POD"),
-                    alt.Tooltip("Severity:N", title="Severity"),
-                    alt.Tooltip("Count:Q", title="Count"),
-                ],
-            )
-            .properties(
-                width=chart_width,
-                height=chart_height,
-                padding={
-                    "left": 20,
-                    "right": 10,
-                    "top": 5,
-                    "bottom": 30,
-                },
-            )
-        )
-        
-        st.altair_chart(chart_severity, use_container_width=False)
-        
-        st.markdown(
-            """
-            <div style="
-                text-align:center;
-                margin-top:-18px;
-                margin-bottom:6px;
-                font-size:11px;
-                font-weight:600;
-                color:#D9D9D9;
-            ">
-                Severity:&nbsp;&nbsp;
-                <span style="color:#8ecbff;">■</span> Sev 2
-                &nbsp;&nbsp;&nbsp;
-                <span style="color:#3f7fff;">■</span> Sev 3
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
+
+    st.altair_chart(chart_people, use_container_width=True)
+
     st.divider()
 
     # -------------------------------
-    # Compact Summary
+    # People Performance Table
     # -------------------------------
-    st.markdown("## 📋 Summary")
+    st.subheader("👥 People Performance")
 
-    t1, t2 = st.columns([1.2, 1])
+    export_people = people_master.rename(
+        columns={
+            "Name": "Person",
+            "Sev2_Contributed": "Sev-2 Resolved",
+            "Sev3_Resolved_RCA": "Sev-3 Resolved",
+            "Total Contribution": "Total",
+        }
+    )
 
-    with t1:
-        st.markdown("### 🧩 POD Performance")
-
-        pod_table_mv = pod_master.rename(
-            columns={
-                "PODS": "POD",
-                "Sev2_Received": "Sev-2",
-                "Sev3_Received": "Sev-3",
-            }
-        )
-
-        pod_table_mv = pod_table_mv[
-            [
-                "POD",
-                "Total Issues",
-                "Sev-2",
-                "Sev-3",
-                "L1 Resolved",
-                "L1 Resolved %",
-                "Moved to L2",
-                "Moved to L2 %",
-            ]
+    export_people = export_people[
+        [
+            "Person",
+            "Sev-3 Resolved",
+            "Sev-2 Resolved",
+            "Total",
         ]
+    ].copy()
 
-        styled_pod_table_mv = pod_table_mv.style.format(
-            {
-                "L1 Resolved %": "{:.1f}%",
-                "Moved to L2 %": "{:.1f}%",
-            }
-        )
-
-        st.dataframe(styled_pod_table_mv, use_container_width=True, hide_index=True)
-
-    with t2:
-        st.markdown("### 👥 People Performance")
-
-        try:
-            people_raw_mv = load_perf_csv(PERF_PEOPLE_FILE, f"Upload {PERF_PEOPLE_FILE}")
-            people_all_mv = normalize_people_perf(people_raw_mv)
-            people_year_mv = people_all_mv[people_all_mv["Year"] == selected_year].copy()
-
-            if master_month_filter != "All":
-                people_year_mv = people_year_mv[
-                    people_year_mv["Month"].astype(str) == master_month_filter
-                ]
-
-            if people_year_mv.empty:
-                st.info("No people performance rows for selected filter.")
-            else:
-                people_summary_mv = (
-                    people_year_mv.groupby("Name", as_index=False)[
-                        ["Sev2_Contributed", "Sev3_Resolved_RCA"]
-                    ]
-                    .sum()
-                )
-
-                people_summary_mv["Total Contribution"] = (
-                    people_summary_mv["Sev2_Contributed"] + people_summary_mv["Sev3_Resolved_RCA"]
-                )
-
-                people_summary_mv = people_summary_mv.sort_values(
-                    "Total Contribution",
-                    ascending=False,
-                ).head(8)
-
-                people_summary_mv = people_summary_mv.rename(
-                    columns={
-                        "Name": "Person",
-                        "Sev2_Contributed": "Sev-2",
-                        "Sev3_Resolved_RCA": "Sev-3",
-                    }
-                )
-
-                st.dataframe(
-                    people_summary_mv[
-                        ["Person", "Sev-2", "Sev-3", "Total Contribution"]
-                    ],
-                    use_container_width=True,
-                    hide_index=True,
-                )
-
-        except Exception:
-            st.info("People performance table could not be loaded for Master View.")
+    st.dataframe(
+        export_people,
+        use_container_width=True,
+        hide_index=True,
+        height=(len(export_people) + 1) * 35,
+    )
 
     # =========================================================
     # LANDSCAPE EXPORT VIEW FOR PNG
     # =========================================================
-    with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
-    
-        st.markdown('<div id="landscape-export-start"></div>', unsafe_allow_html=True)
-    
+    with st.expander("🖼️ Individual Export View for PNG", expanded=False):
+
+        st.markdown('<div id="individual-export-start"></div>', unsafe_allow_html=True)
+
         export_month_label = (
             "All / YTD"
-            if master_month_filter == "All"
-            else master_month_filter.title()
+            if indiv_month_filter == "All"
+            else indiv_month_filter.title()
         )
-    
-        impact_month_label = (
-            "YTD"
-            if master_month_filter == "All"
-            else master_month_filter.title()
-        )
-    
-        # -----------------------------------------------------
-        # Month-over-Month L1 Improvement
-        # -----------------------------------------------------
-        l1_delta_text_export = ""
-        l1_delta_color_export = "#AEB6C1"
-    
-        if master_month_filter != "All":
-    
-            current_month_idx = MONTH_ORDER.index(master_month_filter)
-    
-            if current_month_idx > 0:
-    
-                prev_month = MONTH_ORDER[current_month_idx - 1]
-    
-                prev_df = pod_year_mv[
-                    pod_year_mv["Month"].astype(str) == prev_month
-                ].copy()
-    
-                if not prev_df.empty:
-    
-                    prev_total = int(prev_df["Total Issues"].sum())
-                    prev_l1 = int(prev_df["L1 Resolved"].sum())
-    
-                    prev_l1_pct = (
-                        round((prev_l1 / prev_total) * 100, 1)
-                        if prev_total
-                        else 0
-                    )
-    
-                    delta = round(l1_pct - prev_l1_pct, 1)
-    
-                    if delta > 0:
-                        l1_delta_text_export = (
-                            f"▲ +{delta:.1f}% vs {prev_month.title()}"
-                        )
-                        l1_delta_color_export = "#4ade80"
-    
-                    elif delta < 0:
-                        l1_delta_text_export = (
-                            f"▼ {abs(delta):.1f}% vs {prev_month.title()}"
-                        )
-                        l1_delta_color_export = "#f87171"
-    
-                    else:
-                        l1_delta_text_export = (
-                            f"No change vs {prev_month.title()}"
-                        )
-    
+
         st.markdown(
             f"""
-    <div style="padding-top:10px;padding-bottom:10px;">
-    
-    <h1 style="font-size:52px;margin-bottom:8px;font-weight:900;">
-    🌟 L1 Ops Performance — {selected_year} | {export_month_label}
-    </h1>
-    
-    <div style="font-size:20px;color:#AEB6C1;margin-bottom:25px;">
-    Showing POD performance, L1 resolution efficiency, people contribution, and L2 effort saved through L1 ownership |
-    Month: <b>{export_month_label}</b>
-    </div>
-    
-    </div>
-    
-    <div style="
-    background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-    padding:28px;
-    border-radius:18px;
-    border:1px solid rgba(74,222,128,0.35);
-    margin-bottom:25px;
-    ">
-    
-    <div style="
-    font-size:24px;
-    font-weight:800;
-    color:#bbf7d0;
-    ">
-    💡 L1 Impact Created — {impact_month_label}
-    </div>
-    
-    <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-end;
-    margin-top:12px;
-    ">
-    
-    <div style="
-    font-size:58px;
-    font-weight:950;
-    line-height:1;
-    color:white;
-    ">
-    {l1_pct:.1f}% resolved within L1
-    </div>
-    
-    <div style="
-    text-align:right;
-    font-size:22px;
-    font-weight:900;
-    color:{l1_delta_color_export};
-    padding-bottom:8px;
-    ">
-    {l1_delta_text_export}
-    </div>
-    
-    </div>
-    
-    <div style="
-    margin-top:15px;
-    font-size:22px;
-    color:#dcfce7;
-    font-weight:650;
-    ">
-    L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
-    reducing L2 dependency and saving escalation bandwidth.
-    </div>
-    
-    </div>
+<div style="padding-top:10px;padding-bottom:10px;">
+
+<h1 style="font-size:52px;margin-bottom:8px;font-weight:900;">
+👤 Individual Performance — {selected_year} | {export_month_label}
+</h1>
+
+<div style="font-size:20px;color:#AEB6C1;margin-bottom:25px;">
+Individual performance snapshot showing L1 ownership, severity contribution, and issue resolution.
+</div>
+
+</div>
+
+<div style="
+background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+padding:28px;
+border-radius:18px;
+border:1px solid rgba(74,222,128,0.35);
+margin-bottom:25px;
+">
+
+<div style="font-size:24px;font-weight:800;color:#bbf7d0;">
+💡 Individual Impact Created — {report_scope}
+</div>
+
+<div style="font-size:58px;font-weight:950;line-height:1;color:white;margin-top:12px;">
+{l1_total} issues resolved within L1
+</div>
+
+<div style="margin-top:15px;font-size:22px;color:#dcfce7;font-weight:650;">
+{selected_person_label} contributed to <b>{sev3_total}</b> Sev-3 and <b>{sev2_total}</b> Sev-2 resolutions.
+</div>
+
+</div>
             """,
             unsafe_allow_html=True,
         )
-        # -------------------------------
-        # KPI Row
-        # -------------------------------
-        k1, k2, k3, k4, k5 = st.columns(5)
+
+        k1, k2, k3, k4 = st.columns(4)
 
         with k1:
-            st.metric("🚨 Total Issues", f"{total_issues}")
+            st.metric("🚨 Total Contribution", f"{total_issues}")
         with k2:
-            st.metric("✅ L1 Resolved", f"{l1_total}", f"{l1_pct:.1f}%")
+            st.metric("✅ Sev-3 Resolved", f"{sev3_total}")
         with k3:
-            st.metric("⬆️ Moved to L2", f"{l2_total}", f"{l2_pct:.1f}%")
+            st.metric("⬆️ Sev-2 Resolved", f"{sev2_total}")
         with k4:
-            st.metric("📊 Sev2 / Sev3", f"{sev2_total} / {sev3_total}")
-        with k5:
-            st.metric("🏅 POD with Highest Resolution %", best_pod)
+            st.metric("🥇 Selected People", selected_person_label)
 
         st.divider()
 
-        # -------------------------------
-        # POD Command Center
-        # -------------------------------
-        title_left, legend_right = st.columns([1.4, 1])
+        st.subheader("👥 People Performance")
 
-        with title_left:
-            st.subheader("🧩 POD Performance Graphics")
-
-        with legend_right:
-            st.markdown(
-                """
-                <div style="text-align:right; font-size:13px; margin-top:8px;">
-                    <span style="color:#60a5fa;font-weight:800;">■ Sev-3</span>
-                    &nbsp;&nbsp;
-                    <span style="color:#a78bfa;font-weight:800;">■ Sev-2</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        pod_card_cols = st.columns(5)
-
-        for idx, row in pod_master.reset_index(drop=True).iterrows():
-            pod_name = str(row["PODS"])
-
-            total = int(row["Total Issues"])
-            sev2_received = int(row["Sev2_Received"])
-            sev3_received = int(row["Sev3_Received"])
-
-            sev2_l1 = int(row["Sev2_Contributed"])
-            sev3_l1 = int(row["Sev3_Resolved_RCA"])
-
-            sev2_l2 = max(sev2_received - sev2_l1, 0)
-            sev3_l2 = max(sev3_received - sev3_l1, 0)
-
-            l1_total_local = sev2_l1 + sev3_l1
-            l2_total_local = sev2_l2 + sev3_l2
-
-            l1_pct_local = (l1_total_local / total * 100) if total else 0
-            l2_pct_local = (l2_total_local / total * 100) if total else 0
-
-            sev3_l1_pct = (sev3_l1 / total * 100) if total else 0
-            sev2_l1_pct = (sev2_l1 / total * 100) if total else 0
-
-            sev3_l2_pct = (sev3_l2 / total * 100) if total else 0
-            sev2_l2_pct = (sev2_l2 / total * 100) if total else 0
-
-            with pod_card_cols[idx % 5]:
-                with st.container(border=True):
-                    st.markdown(
-                        f"""
-                        <div style="
-                            min-height:46px;
-                            font-size:16px;
-                            font-weight:900;
-                            color:white;
-                            margin-bottom:8px;
-                        ">
-                            🧩 {pod_name}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                    st.metric("Total", total)
-
-                    s1, s2 = st.columns(2)
-                    with s1:
-                        st.metric("Sev 2", sev2_received)
-                    with s2:
-                        st.metric("Sev 3", sev3_received)
-
-                    # L1 segmented bar
-                    st.markdown(
-                        f"""
-                        <div style="font-size:12px;font-weight:800;margin-top:8px;">✅ L1 %</div>
-
-                        <div style="
-                            width:100%;
-                            height:9px;
-                            background:#1f2937;
-                            border-radius:999px;
-                            overflow:hidden;
-                            display:flex;
-                            margin-top:6px;
-                        ">
-                            <div style="width:{sev3_l1_pct}%; background:#60a5fa;"></div>
-                            <div style="width:{sev2_l1_pct}%; background:#a78bfa;"></div>
-                        </div>
-
-                        <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:6px;">
-                            {l1_pct_local:.1f}%
-                        </div>
-
-                        <div style="font-size:11px;color:#AEB6C2;">
-                            Sev-3: {sev3_l1} | Sev-2: {sev2_l1}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-                    # L2 segmented bar
-                    st.markdown(
-                        f"""
-                        <div style="font-size:12px;font-weight:800;margin-top:10px;">⬆️ L2 %</div>
-
-                        <div style="
-                            width:100%;
-                            height:9px;
-                            background:#1f2937;
-                            border-radius:999px;
-                            overflow:hidden;
-                            display:flex;
-                            margin-top:6px;
-                        ">
-                            <div style="width:{sev3_l2_pct}%; background:#60a5fa;"></div>
-                            <div style="width:{sev2_l2_pct}%; background:#a78bfa;"></div>
-                        </div>
-
-                        <div style="font-size:17px;font-weight:900;color:#fbbf24;margin-top:6px;">
-                            {l2_pct_local:.1f}%
-                        </div>
-
-                        <div style="font-size:11px;color:#AEB6C2;">
-                            Sev-3: {sev3_l2} | Sev-2: {sev2_l2}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-
-        st.divider()
-
-        # -------------------------------
-        # Leadership Trend View
-        # -------------------------------
-        st.markdown("## 📈 Sev issues Trend View")
-
-        c1, c2, c3 = st.columns([1.1, 1.1, 1.1], gap="medium")
-        
-        chart_width = 445
-        chart_height = 300
-        
-        common_y_axis = alt.Y(
-            "PODS:N",
-            sort="-x",
-            title=None,
-            axis=alt.Axis(
-                labelLimit=200,
-                labelPadding=8,
-                labelFontSize=13,
-            ),
+        st.dataframe(
+            export_people,
+            use_container_width=True,
+            hide_index=True,
+            height=(len(export_people) + 1) * 35,
         )
-        
-        common_padding = {
-            "left": 20,
-            "right": 10,
-            "top": 5,
-            "bottom": 40,
-        }
-        
-        with c1:
-            st.markdown("**🏆 POD L1 Resolved %**")
-        
-            chart_l1 = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-                .encode(
-                    x=alt.X(
-                        "L1 Resolved %:Q",
-                        title="L1 %",
-                        scale=alt.Scale(domain=[0, 100]),
-                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                    ),
-                    y=common_y_axis,
-                    tooltip=[
-                        alt.Tooltip("PODS:N", title="POD"),
-                        alt.Tooltip("L1 Resolved %:Q", title="L1 %", format=".1f"),
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                    ],
-                )
-                .properties(
-                    width=chart_width,
-                    height=chart_height,
-                    padding=common_padding,
-                )
-            )
-        
-            st.altair_chart(chart_l1, use_container_width=False)
-        
-        with c2:
-            st.markdown("**🚨 POD Total Issues**")
-        
-            chart_total = (
-                alt.Chart(pod_master)
-                .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-                .encode(
-                    x=alt.X(
-                        "Total Issues:Q",
-                        title="Issues",
-                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                    ),
-                    y=common_y_axis,
-                    tooltip=[
-                        alt.Tooltip("PODS:N", title="POD"),
-                        alt.Tooltip("Total Issues:Q", title="Total Issues"),
-                    ],
-                )
-                .properties(
-                    width=chart_width,
-                    height=chart_height,
-                    padding=common_padding,
-                )
-            )
-        
-            st.altair_chart(chart_total, use_container_width=False)
-        
-        with c3:
-            st.markdown("**📊 Severity Split by POD**")
-        
-            sev_long = pod_master[["PODS", "Sev2_Received", "Sev3_Received"]].melt(
-                id_vars="PODS",
-                value_vars=["Sev2_Received", "Sev3_Received"],
-                var_name="Severity",
-                value_name="Count",
-            )
-        
-            sev_long["Severity"] = sev_long["Severity"].replace(
-                {
-                    "Sev2_Received": "Sev 2",
-                    "Sev3_Received": "Sev 3",
-                }
-            )
-        
-            chart_severity = (
-                alt.Chart(sev_long)
-                .mark_bar()
-                .encode(
-                    x=alt.X(
-                        "Count:Q",
-                        title="Issues",
-                        axis=alt.Axis(labelFontSize=12, titleFontSize=13),
-                    ),
-                    y=common_y_axis,
-                    color=alt.Color(
-                        "Severity:N",
-                        legend=None,
-                    ),
-                    tooltip=[
-                        alt.Tooltip("PODS:N", title="POD"),
-                        alt.Tooltip("Severity:N", title="Severity"),
-                        alt.Tooltip("Count:Q", title="Count"),
-                    ],
-                )
-                .properties(
-                    width=chart_width,
-                    height=chart_height,
-                    padding={
-                        "left": 20,
-                        "right": 10,
-                        "top": 5,
-                        "bottom": 30,
-                    },
-                )
-            )
-        
-            st.altair_chart(chart_severity, use_container_width=False)
 
-            st.markdown(
-                """
-                <div style="
-                    text-align:center;
-                    margin-top:-18px;
-                    margin-bottom:6px;
-                    font-size:11px;
-                    font-weight:600;
-                    color:#D9D9D9;
-                ">
-                    Severity:&nbsp;&nbsp;
-                    <span style="color:#8ecbff;">■</span> Sev 2
-                    &nbsp;&nbsp;&nbsp;
-                    <span style="color:#3f7fff;">■</span> Sev 3
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        
-        st.divider()
-        # =====================================================
-        # POD + PEOPLE PERFORMANCE SIDE BY SIDE
-        # =====================================================
-        left_table, right_table = st.columns([1.25, 1], gap="large")
-    
-        # -----------------------------------------------------
-        # POD PERFORMANCE
-        # -----------------------------------------------------
-        with left_table:
-    
-            st.subheader("🧾 POD Performance")
-    
-            export_pod_table = pod_master.copy()
-    
-            export_pod_table["Sev-2 Resolved %"] = (
-                export_pod_table["Sev2_Contributed"]
-                / export_pod_table["Sev2_Received"].replace(0, pd.NA)
-                * 100
-            ).fillna(0).round(1)
-    
-            export_pod_table["Sev-3 Resolved %"] = (
-                export_pod_table["Sev3_Resolved_RCA"]
-                / export_pod_table["Sev3_Received"].replace(0, pd.NA)
-                * 100
-            ).fillna(0).round(1)
-    
-            export_pod_table = export_pod_table.rename(
-                columns={
-                    "PODS": "POD",
-                    "Sev2_Received": "Sev-2\nReceived",
-                    "Sev3_Received": "Sev-3\nReceived",
-                    "Sev-2 Resolved %": "Sev-2\nResolved %",
-                    "Sev-3 Resolved %": "Sev-3\nResolved %",
-                }
-            )
-    
-            export_pod_table = export_pod_table[
-                [
-                    "POD",
-                    "Sev-3\nReceived",
-                    "Sev-3\nResolved %",
-                    "Sev-2\nReceived",
-                    "Sev-2\nResolved %",
-                ]
-            ].copy()
-    
-            styled_export_pod_table = (
-                export_pod_table.style
-                .format(
-                    {
-                        "Sev-3\nResolved %": "{:.1f}%",
-                        "Sev-2\nResolved %": "{:.1f}%",
-                    }
-                )
-            )
-    
-            st.dataframe(
-                styled_export_pod_table,
-                use_container_width=True,
-                hide_index=True,
-                height=(len(export_pod_table) + 1) * 35
-            )
-    
-        # -----------------------------------------------------
-        # PEOPLE PERFORMANCE
-        # -----------------------------------------------------
-        with right_table:
-    
-            st.subheader("👥 People Performance")
-    
-            export_people = people_summary_mv.copy()
-    
-            export_people = export_people.rename(
-                columns={
-                    "Name": "Person",
-                    "Sev2_Contributed": "Sev-2 Resolved",
-                    "Sev3_Resolved_RCA": "Sev-3 Resolved",
-                    "Sev-2": "Sev-2 Resolved",
-                    "Sev-3": "Sev-3 Resolved",
-                    "Total Contribution": "Total",
-                }
-            )
-    
-            # Ensure Total exists
-            if "Total" not in export_people.columns:
-                export_people["Total"] = (
-                    export_people.get("Sev-2 Resolved", 0)
-                    + export_people.get("Sev-3 Resolved", 0)
-                )
-    
-            export_people = export_people[
-                [
-                    "Person",
-                    "Sev-3 Resolved",
-                    "Sev-2 Resolved",
-                    "Total",
-                ]
-            ].copy()
-    
-            st.dataframe(
-                export_people,
-                use_container_width=True,
-                hide_index=True,
-                height=(len(export_people) + 1) * 35
-            )        
-        
-    st.markdown('<div id="landscape-export-end"></div>', unsafe_allow_html=True)
-
+        st.markdown('<div id="individual-export-end"></div>', unsafe_allow_html=True)
     # =========================================================
     # EXPORT SECTION
     # =========================================================
