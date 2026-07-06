@@ -2589,7 +2589,6 @@ st.markdown(banner_html, unsafe_allow_html=True)
     # KPI Cards
     # -------------------------------
     k1, k2, k3, k4 = st.columns(4)
-
     with k1:
         _mv_card(
             "TEAM TOTAL ISSUES",
