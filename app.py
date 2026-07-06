@@ -2418,8 +2418,8 @@ with tab5:
     # Filters
     # -------------------------------
     with st.container(border=True):
-        f1, f2, f3 = st.columns([0.7, 1.15, 1.15])
-
+        f1, f2 = st.columns([0.7, 1.3])
+    
         with f1:
             indiv_month_filter = st.selectbox(
                 "📅 Select Month",
@@ -2427,50 +2427,32 @@ with tab5:
                 index=0,
                 key="individual_month_filter",
             )
-
+    
         if indiv_month_filter != "All":
             people_year = people_year[
                 people_year["Month"].astype(str) == indiv_month_filter
             ]
-
+    
         with f2:
-            indiv_pod_options = sorted(
-                people_year["PODS"].dropna().astype(str).unique().tolist()
-            )
-
-            indiv_pod_filter = st.multiselect(
-                "🧩 Select POD(s)",
-                indiv_pod_options,
-                default=indiv_pod_options,
-                key="individual_pod_filter",
-            )
-
-        if indiv_pod_filter:
-            people_year = people_year[
-                people_year["PODS"].isin(indiv_pod_filter)
-            ]
-
-        with f3:
             indiv_people_options = sorted(
                 people_year["Name"].dropna().astype(str).unique().tolist()
             )
-
+    
             indiv_people_filter = st.multiselect(
                 "👤 Select People",
                 indiv_people_options,
                 default=indiv_people_options,
                 key="individual_people_filter",
             )
-
+    
         if indiv_people_filter:
             people_year = people_year[
                 people_year["Name"].isin(indiv_people_filter)
             ]
-
+    
     if people_year.empty:
         st.info("No individual performance data available for selected filters.")
         st.stop()
-
     # -------------------------------
     # Individual Metrics
     # -------------------------------
