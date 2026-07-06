@@ -2531,21 +2531,59 @@ with tab5:
     )
 
     # -------------------------------
+    # Team vs Individual Contribution Metrics
+    # -------------------------------
+    
+    team_view = pod_year_mv.copy()
+    
+    if indiv_month_filter != "All":
+        team_view = team_view[
+            team_view["Month"].astype(str) == indiv_month_filter
+        ]
+    
+    # Team received totals
+    team_sev2_received = int(team_view["Sev2_Received"].sum())
+    team_sev3_received = int(team_view["Sev3_Received"].sum())
+    team_total_received = team_sev2_received + team_sev3_received
+    
+    # Individual resolved totals
+    indiv_sev2_resolved = int(people_year["Sev2_Contributed"].sum())
+    indiv_sev3_resolved = int(people_year["Sev3_Resolved_RCA"].sum())
+    indiv_total_resolved = indiv_sev2_resolved + indiv_sev3_resolved
+    
+    # Contribution %
+    sev2_contribution_pct = (
+        round((indiv_sev2_resolved / team_sev2_received) * 100, 1)
+        if team_sev2_received else 0
+    )
+    
+    sev3_contribution_pct = (
+        round((indiv_sev3_resolved / team_sev3_received) * 100, 1)
+        if team_sev3_received else 0
+    )
+    
+    overall_contribution_pct = (
+        round((indiv_total_resolved / team_total_received) * 100, 1)
+        if team_total_received else 0
+    )
+
+    # -------------------------------
     # Impact Banner
     # -------------------------------
     banner_html = f"""<div style="background:linear-gradient(90deg,#052e16,#065f46,#0f766e);border-radius:20px;padding:24px 30px;margin:18px 0 18px 0;border:1px solid rgba(74,222,128,0.35);">
 <div style="font-size:18px;color:#bbf7d0;font-weight:800;">💡 Individual Impact Created — {report_scope}</div>
 
 <div style="font-size:58px;font-weight:900;color:white;line-height:1;margin-top:12px;">
-{l1_total} issues resolved within L1
+{overall_contribution_pct:.1f}% contribution to team resolution
 </div>
 
 <div style="margin-top:16px;color:#dcfce7;font-size:17px;font-weight:600;">
-{selected_person_label} contributed to <b>{sev3_total}</b> Sev-3 and <b>{sev2_total}</b> Sev-2 resolutions.
+{selected_person_label} resolved <b>{indiv_total_resolved}</b> of <b>{team_total_received}</b> team issues,
+including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_sev2_resolved}/{team_sev2_received}</b> Sev-2 issues.
 </div>
 </div>"""
 
-    st.markdown(banner_html, unsafe_allow_html=True)
+st.markdown(banner_html, unsafe_allow_html=True)
 
     # -------------------------------
     # KPI Cards
@@ -2553,13 +2591,40 @@ with tab5:
     k1, k2, k3, k4 = st.columns(4)
 
     with k1:
-        _mv_card("TOTAL CONTRIBUTION", total_issues, "Sev 2 + Sev 3", "#ffffff", "🚨")
+        _mv_card(
+            "TEAM TOTAL ISSUES",
+            team_total_received,
+            "Sev 2 + Sev 3 received",
+            "#ffffff",
+            "🚨",
+        )
+    
     with k2:
-        _mv_card("SEV-3 RESOLVED", sev3_total, "Resolved by person", "#60a5fa", "✅")
+        _mv_card(
+            "INDIVIDUAL RESOLVED",
+            indiv_total_resolved,
+            f"{overall_contribution_pct:.1f}% of team issues",
+            "#4ade80",
+            "✅",
+        )
+    
     with k3:
-        _mv_card("SEV-2 RESOLVED", sev2_total, "Resolved by person", "#a78bfa", "⬆️")
+        _mv_card(
+            "SEV-3 CONTRIBUTION",
+            f"{indiv_sev3_resolved} / {team_sev3_received}",
+            f"{sev3_contribution_pct:.1f}% of team Sev-3",
+            "#60a5fa",
+            "📘",
+        )
+    
     with k4:
-        _mv_card("TOP CONTRIBUTOR", selected_person_label, "Selected person", "#c084fc", "🥇")
+        _mv_card(
+            "SEV-2 CONTRIBUTION",
+            f"{indiv_sev2_resolved} / {team_sev2_received}",
+            f"{sev2_contribution_pct:.1f}% of team Sev-2",
+            "#a78bfa",
+            "📕",
+        )
 
     st.divider()
 
