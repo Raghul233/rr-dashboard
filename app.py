@@ -2583,7 +2583,7 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
 </div>
 </div>"""
 
-st.markdown(banner_html, unsafe_allow_html=True)
+    st.markdown(banner_html, unsafe_allow_html=True)
 
     # -------------------------------
     # KPI Cards
