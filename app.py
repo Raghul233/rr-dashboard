@@ -1014,21 +1014,22 @@ with tab4:
         with f3:
             people_raw_filter = load_perf_csv(
                 PERF_PEOPLE_FILE,
-                f"Upload {PERF_PEOPLE_FILE}"
+                f"Upload {PERF_PEOPLE_FILE}",
             )
     
             people_all_filter = normalize_people_perf(people_raw_filter)
-            people_year_filter = people_all_filter[
+    
+            people_master = people_all_filter[
                 people_all_filter["Year"] == selected_year
             ].copy()
     
             if master_month_filter != "All":
-                people_year_filter = people_year_filter[
-                    people_year_filter["Month"].astype(str) == master_month_filter
+                people_master = people_master[
+                    people_master["Month"].astype(str) == master_month_filter
                 ]
     
             available_people_mv = sorted(
-                people_year_filter["Name"].dropna().astype(str).unique().tolist()
+                people_master["Name"].dropna().astype(str).unique().tolist()
             )
     
             master_people_filter = st.multiselect(
@@ -1058,13 +1059,11 @@ with tab4:
         st.stop()
     
     # -------------------------------
-    # Apply People filters
+    # Apply People filter
     # -------------------------------
-    people_view_mv = people_year_filter.copy()
-    
     if master_people_filter:
-        people_view_mv = people_view_mv[
-            people_view_mv["Name"].isin(master_people_filter)
+        people_master = people_master[
+            people_master["Name"].isin(master_people_filter)
         ]
     
     report_scope = (
@@ -1072,7 +1071,6 @@ with tab4:
         if master_month_filter == "All"
         else master_month_filter.title()
     )
-
     # -------------------------------
     # Metrics
     # -------------------------------
