@@ -989,8 +989,8 @@ with tab4:
     # Filters
     # -------------------------------
     with st.container(border=True):
-        f1, f2 = st.columns([1, 1])
-
+        f1, f2, f3 = st.columns([1, 1, 1])
+    
         with f1:
             master_month_filter = st.selectbox(
                 "📅 Select Month",
@@ -998,29 +998,80 @@ with tab4:
                 index=0,
                 key="master_view_month_filter",
             )
-
+    
         with f2:
-            available_pods_mv = sorted(pod_year_mv["PODS"].dropna().astype(str).unique().tolist())
+            available_pods_mv = sorted(
+                pod_year_mv["PODS"].dropna().astype(str).unique().tolist()
+            )
+    
             master_pod_filter = st.multiselect(
                 "🧩 Select POD(s)",
                 available_pods_mv,
                 default=available_pods_mv,
                 key="master_view_pod_filter",
             )
-
+    
+        with f3:
+            people_raw_filter = load_perf_csv(
+                PERF_PEOPLE_FILE,
+                f"Upload {PERF_PEOPLE_FILE}"
+            )
+    
+            people_all_filter = normalize_people_perf(people_raw_filter)
+            people_year_filter = people_all_filter[
+                people_all_filter["Year"] == selected_year
+            ].copy()
+    
+            if master_month_filter != "All":
+                people_year_filter = people_year_filter[
+                    people_year_filter["Month"].astype(str) == master_month_filter
+                ]
+    
+            available_people_mv = sorted(
+                people_year_filter["Name"].dropna().astype(str).unique().tolist()
+            )
+    
+            master_people_filter = st.multiselect(
+                "👤 Select People",
+                available_people_mv,
+                default=available_people_mv,
+                key="master_view_people_filter",
+            )
+    
+    # -------------------------------
+    # Apply POD / Month filters
+    # -------------------------------
     mv_view = pod_year_mv.copy()
-
+    
     if master_month_filter != "All":
-        mv_view = mv_view[mv_view["Month"].astype(str) == master_month_filter]
-
+        mv_view = mv_view[
+            mv_view["Month"].astype(str) == master_month_filter
+        ]
+    
     if master_pod_filter:
-        mv_view = mv_view[mv_view["PODS"].isin(master_pod_filter)]
-
+        mv_view = mv_view[
+            mv_view["PODS"].isin(master_pod_filter)
+        ]
+    
     if mv_view.empty:
-        st.info("No data available for selected filters.")
+        st.info("No data available for selected Month / POD filters.")
         st.stop()
-
-    report_scope = "YTD" if master_month_filter == "All" else master_month_filter.title()
+    
+    # -------------------------------
+    # Apply People filters
+    # -------------------------------
+    people_view_mv = people_year_filter.copy()
+    
+    if master_people_filter:
+        people_view_mv = people_view_mv[
+            people_view_mv["Name"].isin(master_people_filter)
+        ]
+    
+    report_scope = (
+        "YTD"
+        if master_month_filter == "All"
+        else master_month_filter.title()
+    )
 
     # -------------------------------
     # Metrics
