@@ -2417,12 +2417,12 @@ with tab5:
     # -------------------------------
     # Individual Metrics
     # -------------------------------
-    sev2_total = int(people_year["Sev-2 Contributed"].sum())
-    sev3_total = int(people_year["Sev-3 Contributed"].sum())
-
+    sev2_total = int(people_year["Sev2_Contributed"].sum())
+    sev3_total = int(people_year["Sev3_Resolved_RCA"].sum())
+    
     l1_total = sev2_total + sev3_total
     total_issues = l1_total
-
+    
     l2_total = 0
     l1_pct = 100.0 if total_issues else 0
     l2_pct = 0.0
