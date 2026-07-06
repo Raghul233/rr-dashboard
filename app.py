@@ -1519,46 +1519,142 @@ L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducin
     # LANDSCAPE EXPORT VIEW FOR PNG
     # =========================================================
     with st.expander("🖼️ Landscape Export View for PNG", expanded=False):
-
+    
         st.markdown('<div id="landscape-export-start"></div>', unsafe_allow_html=True)
-
-        export_month_label = "All / YTD" if master_month_filter == "All" else master_month_filter.title()
-        impact_month_label = "YTD" if master_month_filter == "All" else master_month_filter.title()
-
+    
+        export_month_label = (
+            "All / YTD"
+            if master_month_filter == "All"
+            else master_month_filter.title()
+        )
+    
+        impact_month_label = (
+            "YTD"
+            if master_month_filter == "All"
+            else master_month_filter.title()
+        )
+    
+        # -----------------------------------------------------
+        # Month-over-Month L1 Improvement
+        # -----------------------------------------------------
+        l1_delta_text_export = ""
+        l1_delta_color_export = "#AEB6C1"
+    
+        if master_month_filter != "All":
+    
+            current_month_idx = MONTH_ORDER.index(master_month_filter)
+    
+            if current_month_idx > 0:
+    
+                prev_month = MONTH_ORDER[current_month_idx - 1]
+    
+                prev_df = pod_year_mv[
+                    pod_year_mv["Month"].astype(str) == prev_month
+                ].copy()
+    
+                if not prev_df.empty:
+    
+                    prev_total = int(prev_df["Total Issues"].sum())
+                    prev_l1 = int(prev_df["L1 Resolved"].sum())
+    
+                    prev_l1_pct = (
+                        round((prev_l1 / prev_total) * 100, 1)
+                        if prev_total
+                        else 0
+                    )
+    
+                    delta = round(l1_pct - prev_l1_pct, 1)
+    
+                    if delta > 0:
+                        l1_delta_text_export = (
+                            f"▲ +{delta:.1f}% vs {prev_month.title()}"
+                        )
+                        l1_delta_color_export = "#4ade80"
+    
+                    elif delta < 0:
+                        l1_delta_text_export = (
+                            f"▼ {abs(delta):.1f}% vs {prev_month.title()}"
+                        )
+                        l1_delta_color_export = "#f87171"
+    
+                    else:
+                        l1_delta_text_export = (
+                            f"No change vs {prev_month.title()}"
+                        )
+    
         st.markdown(
             f"""
-            <div style="padding-top:10px; padding-bottom:10px;">
-                <h1 style="font-size:52px; margin-bottom:8px; font-weight:900;">
-                    🌟 L1 Ops Performance — {selected_year} | {export_month_label}
-                </h1>
-                <div style="font-size:20px; color:#AEB6C1; margin-bottom:25px;">
-                    Showing POD performance, L1 resolution efficiency, people contribution, and L2 effort saved through L1 ownership |
-                    Month: <b>{export_month_label}</b>
-                </div>
-            </div>
-
-            <div style="
-                background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-                padding:28px;
-                border-radius:18px;
-                border:1px solid rgba(74,222,128,0.35);
-                margin-bottom:25px;
-            ">
-                <div style="font-size:24px; font-weight:800; color:#bbf7d0;">
-                    💡 L1 Impact Created — {impact_month_label}
-                </div>
-                <div style="font-size:58px; font-weight:950; margin-top:10px; line-height:1; color:white;">
-                    {l1_pct:.1f}% resolved within L1
-                </div>
-                <div style="margin-top:15px; font-size:22px; color:#dcfce7; font-weight:650;">
-                    L1 Ops resolved {l1_total} of {total_issues} total issues,
-                    reducing L2 dependency and saving escalation bandwidth.
-                </div>
-            </div>
+    <div style="padding-top:10px;padding-bottom:10px;">
+    
+    <h1 style="font-size:52px;margin-bottom:8px;font-weight:900;">
+    🌟 L1 Ops Performance — {selected_year} | {export_month_label}
+    </h1>
+    
+    <div style="font-size:20px;color:#AEB6C1;margin-bottom:25px;">
+    Showing POD performance, L1 resolution efficiency, people contribution, and L2 effort saved through L1 ownership |
+    Month: <b>{export_month_label}</b>
+    </div>
+    
+    </div>
+    
+    <div style="
+    background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
+    padding:28px;
+    border-radius:18px;
+    border:1px solid rgba(74,222,128,0.35);
+    margin-bottom:25px;
+    ">
+    
+    <div style="
+    font-size:24px;
+    font-weight:800;
+    color:#bbf7d0;
+    ">
+    💡 L1 Impact Created — {impact_month_label}
+    </div>
+    
+    <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-top:12px;
+    ">
+    
+    <div style="
+    font-size:58px;
+    font-weight:950;
+    line-height:1;
+    color:white;
+    ">
+    {l1_pct:.1f}% resolved within L1
+    </div>
+    
+    <div style="
+    text-align:right;
+    font-size:22px;
+    font-weight:900;
+    color:{l1_delta_color_export};
+    padding-bottom:8px;
+    ">
+    {l1_delta_text_export}
+    </div>
+    
+    </div>
+    
+    <div style="
+    margin-top:15px;
+    font-size:22px;
+    color:#dcfce7;
+    font-weight:650;
+    ">
+    L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues,
+    reducing L2 dependency and saving escalation bandwidth.
+    </div>
+    
+    </div>
             """,
             unsafe_allow_html=True,
         )
-
         # -------------------------------
         # KPI Row
         # -------------------------------
