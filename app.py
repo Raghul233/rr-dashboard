@@ -2706,6 +2706,19 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
 
     st.divider()
 
+    # Keep only months with actual data in charts
+    monthly_summary = monthly_summary[
+        (monthly_summary["Attempted"] > 0) |
+        (monthly_summary["Resolved"] > 0)
+    ].copy()
+    
+    month_order_present = [
+        m for m in MONTH_ORDER
+        if m in monthly_summary["Month"].astype(str).tolist()
+    ]
+    
+    monthly_summary["Month"] = monthly_summary["Month"].astype(str)
+
     # -------------------------------
     # Trend Charts
     # -------------------------------
@@ -2720,7 +2733,7 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
             alt.Chart(monthly_summary)
             .mark_line(point=True)
             .encode(
-                x=alt.X("Month:N", sort=list(monthly_summary["Month"]), title=None),
+                x=alt.X("Month:N", sort=month_order_present, title=None),
                 y=alt.Y(
                     "Efficiency %:Q",
                     title="Efficiency %",
@@ -2745,7 +2758,7 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
             alt.Chart(monthly_summary)
             .mark_line(point=True)
             .encode(
-                x=alt.X("Month:N", sort=list(monthly_summary["Month"]), title=None),
+                x=alt.X("Month:N", sort=month_order_present, title=None),
                 y=alt.Y(
                     "Team Contribution %:Q",
                     title="Contribution %",
