@@ -1723,6 +1723,44 @@ L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducin
 
         st.divider()
 
+        # =======================
+        # 2) TEAM TABLE (with received + contributed counts + %)
+        # =======================
+        st.subheader("🧾 Team Performance — Table")
+    
+        team_out = team_view.copy()
+        team_out["Month"] = team_out["Month"].astype(str)
+    
+        team_out = team_out[
+            ["Quarter", "Month",
+             "Sev2_Received", "Sev2_Contributed", "Sev2_Contribution_%",
+             "Sev3_Received", "Sev3_Resolved_RCA", "Sev3_Resolution_RCA_%"]
+        ].copy()
+    
+        team_out = team_out.rename(
+            columns={
+                "Sev2_Received": "Sev-2 Received",
+                "Sev2_Contributed": "Sev-2 Contributed",
+                "Sev2_Contribution_%": "Sev-2 Contribution %",
+                "Sev3_Received": "Sev-3 Received",
+                "Sev3_Resolved_RCA": "Sev-3 Resolved / RCA",
+                "Sev3_Resolution_RCA_%": "Sev-3 Resolution / RCA %",
+            }
+        )
+    
+        team_out["Sev-2 Contribution %"] = pd.to_numeric(team_out["Sev-2 Contribution %"], errors="coerce").fillna(0).round(1)
+        team_out["Sev-3 Resolution / RCA %"] = pd.to_numeric(team_out["Sev-3 Resolution / RCA %"], errors="coerce").fillna(0).round(1)
+    
+        percent_cols = ["Sev-2 Contribution %", "Sev-3 Resolution / RCA %"]
+    
+        styled_team = team_out.style.format(
+            {col: "{:.1f}%" for col in percent_cols if col in team_out.columns}
+        )
+        
+        st.dataframe(styled_team, use_container_width=True, hide_index=True)
+    
+        st.divider()
+
         # -------------------------------
         # POD Command Center
         # -------------------------------
