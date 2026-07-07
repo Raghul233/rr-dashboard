@@ -2156,8 +2156,6 @@ L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducin
     
     st.dataframe(styled_team, use_container_width=True, hide_index=True)
 
-    st.divider()
-
     # =========================================================
     # EXPORT SECTION
     # =========================================================
