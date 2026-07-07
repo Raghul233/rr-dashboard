@@ -2367,9 +2367,18 @@ with tab5:
     st.markdown(f"# 👤 Individual Performance — {selected_year}")
 
     st.caption(
-        "Individual performance snapshot showing L1 resolution efficiency, severity ownership, "
-        "and contribution by selected team member."
+        "Individual performance snapshot showing ownership, resolution efficiency, "
+        "team contribution, and severity-wise performance."
     )
+
+    # -------------------------------
+    # Helper
+    # -------------------------------
+    def _safe_pct_num(numer, denom):
+        return round((numer / denom) * 100, 1) if denom else 0
+
+    def _format_pct_col(df, cols):
+        return df.style.format({c: "{:.1f}%" for c in cols})
 
     # -------------------------------
     # Load People Data
@@ -2385,29 +2394,20 @@ with tab5:
         people_all["Year"] == selected_year
     ].copy()
 
-    # -------------------------------
-    # Safe column mapping
-    # -------------------------------
-    if "Sev2_Contributed" not in people_year.columns:
-        if "Sev-2 Contributed" in people_year.columns:
-            people_year["Sev2_Contributed"] = people_year["Sev-2 Contributed"]
-        elif "Sev 2" in people_year.columns:
-            people_year["Sev2_Contributed"] = people_year["Sev 2"]
-        else:
-            people_year["Sev2_Contributed"] = 0
+    # Ensure new columns exist
+    for c in [
+        "Sev2_Attempted",
+        "Sev2_Contributed",
+        "Sev3_Attempted",
+        "Sev3_Resolved_RCA",
+    ]:
+        if c not in people_year.columns:
+            people_year[c] = 0
 
-    if "Sev3_Resolved_RCA" not in people_year.columns:
-        if "Sev-3 Contributed" in people_year.columns:
-            people_year["Sev3_Resolved_RCA"] = people_year["Sev-3 Contributed"]
-        elif "Sev3_Contributed" in people_year.columns:
-            people_year["Sev3_Resolved_RCA"] = people_year["Sev3_Contributed"]
-        elif "Sev 3" in people_year.columns:
-            people_year["Sev3_Resolved_RCA"] = people_year["Sev 3"]
-        else:
-            people_year["Sev3_Resolved_RCA"] = 0
-
-    # People CSV does not have PODS, so use fallback grouping
-    people_year["PODS"] = "Individual"
+        people_year[c] = pd.to_numeric(
+            people_year[c],
+            errors="coerce",
+        ).fillna(0).astype(int)
 
     # -------------------------------
     # Filters
@@ -2418,17 +2418,13 @@ with tab5:
         with f1:
             indiv_month_filter = st.selectbox(
                 "📅 Select Month",
-                ["All"] + sorted(
-                    people_year["Month"].dropna().astype(str).unique().tolist()
-                ),
+                ["All"] + [
+                    m for m in MONTH_ORDER
+                    if m in people_year["Month"].astype(str).unique().tolist()
+                ],
                 index=0,
                 key="individual_month_filter",
             )
-
-        if indiv_month_filter != "All":
-            people_year = people_year[
-                people_year["Month"].astype(str) == indiv_month_filter
-            ]
 
         with f2:
             indiv_people_options = sorted(
@@ -2442,33 +2438,24 @@ with tab5:
                 key="individual_people_filter",
             )
 
-        if indiv_people_filter:
-            people_year = people_year[
-                people_year["Name"].isin(indiv_people_filter)
-            ]
+    # -------------------------------
+    # Apply Filters
+    # -------------------------------
+    people_filtered = people_year.copy()
 
-    if people_year.empty:
+    if indiv_month_filter != "All":
+        people_filtered = people_filtered[
+            people_filtered["Month"].astype(str) == indiv_month_filter
+        ]
+
+    if indiv_people_filter:
+        people_filtered = people_filtered[
+            people_filtered["Name"].isin(indiv_people_filter)
+        ]
+
+    if people_filtered.empty:
         st.info("No individual performance data available for selected filters.")
         st.stop()
-
-    # -------------------------------
-    # Individual Metrics
-    # -------------------------------
-    sev2_total = int(people_year["Sev2_Contributed"].sum())
-    sev3_total = int(people_year["Sev3_Resolved_RCA"].sum())
-
-    l1_total = sev2_total + sev3_total
-    total_issues = l1_total
-
-    l2_total = 0
-    l1_pct = 100.0 if total_issues else 0
-    l2_pct = 0.0
-
-    report_scope = (
-        "YTD"
-        if indiv_month_filter == "All"
-        else indiv_month_filter.title()
-    )
 
     selected_person_label = (
         "All Selected People"
@@ -2476,95 +2463,134 @@ with tab5:
         else indiv_people_filter[0]
     )
 
-    # -------------------------------
-    # POD Summary for Individual View
-    # -------------------------------
-    pod_master = (
-        people_year.groupby("PODS", as_index=False)
-        .agg(
-            {
-                "Sev2_Contributed": "sum",
-                "Sev3_Resolved_RCA": "sum",
-            }
-        )
-    )
-
-    pod_master["Sev2_Received"] = pod_master["Sev2_Contributed"]
-    pod_master["Sev3_Received"] = pod_master["Sev3_Resolved_RCA"]
-    pod_master["Total Issues"] = (
-        pod_master["Sev2_Received"] + pod_master["Sev3_Received"]
-    )
-
-    pod_master["L1 Resolved"] = pod_master["Total Issues"]
-    pod_master["Moved to L2"] = 0
-    pod_master["L1 Resolved %"] = 100.0
-    pod_master["Moved to L2 %"] = 0.0
-
-    pod_master = pod_master.sort_values(
-        "Total Issues",
-        ascending=False,
-    )
-
-    best_pod = selected_person_label
-
-    # -------------------------------
-    # People Summary
-    # -------------------------------
-    people_master = (
-        people_year.groupby("Name", as_index=False)
-        .agg(
-            {
-                "Sev2_Contributed": "sum",
-                "Sev3_Resolved_RCA": "sum",
-            }
-        )
-    )
-
-    people_master["Total Contribution"] = (
-        people_master["Sev2_Contributed"]
-        + people_master["Sev3_Resolved_RCA"]
-    )
-
-    people_master = people_master.sort_values(
-        "Total Contribution",
-        ascending=False,
+    report_scope = (
+        "YTD"
+        if indiv_month_filter == "All"
+        else indiv_month_filter.title()
     )
 
     # -------------------------------
-    # Team vs Individual Contribution Metrics
+    # Team Denominator
     # -------------------------------
-    
     team_view = pod_year_mv.copy()
-    
+
     if indiv_month_filter != "All":
         team_view = team_view[
             team_view["Month"].astype(str) == indiv_month_filter
         ]
-    
-    # Team received totals
-    team_sev2_received = int(team_view["Sev2_Received"].sum())
-    team_sev3_received = int(team_view["Sev3_Received"].sum())
-    team_total_received = team_sev2_received + team_sev3_received
-    
-    # Individual resolved totals
-    indiv_sev2_resolved = int(people_year["Sev2_Contributed"].sum())
-    indiv_sev3_resolved = int(people_year["Sev3_Resolved_RCA"].sum())
-    indiv_total_resolved = indiv_sev2_resolved + indiv_sev3_resolved
-    
-    # Contribution %
-    sev2_contribution_pct = (
-        round((indiv_sev2_resolved / team_sev2_received) * 100, 1)
-        if team_sev2_received else 0
+
+    team_total_resolved = int(team_view["L1 Resolved"].sum())
+
+    # -------------------------------
+    # Individual Summary Metrics
+    # -------------------------------
+    sev2_attempted = int(people_filtered["Sev2_Attempted"].sum())
+    sev2_resolved = int(people_filtered["Sev2_Contributed"].sum())
+    sev3_attempted = int(people_filtered["Sev3_Attempted"].sum())
+    sev3_resolved = int(people_filtered["Sev3_Resolved_RCA"].sum())
+
+    total_attempted = sev2_attempted + sev3_attempted
+    total_resolved = sev2_resolved + sev3_resolved
+
+    resolution_efficiency_pct = _safe_pct_num(
+        total_resolved,
+        total_attempted,
     )
-    
-    sev3_contribution_pct = (
-        round((indiv_sev3_resolved / team_sev3_received) * 100, 1)
-        if team_sev3_received else 0
+
+    team_contribution_pct = _safe_pct_num(
+        total_resolved,
+        team_total_resolved,
     )
-    
-    overall_contribution_pct = (
-        round((indiv_total_resolved / team_total_received) * 100, 1)
-        if team_total_received else 0
+
+    # -------------------------------
+    # Monthly Trend Data
+    # -------------------------------
+    people_trend_base = people_year.copy()
+
+    if indiv_people_filter:
+        people_trend_base = people_trend_base[
+            people_trend_base["Name"].isin(indiv_people_filter)
+        ]
+
+    monthly_summary = (
+        people_trend_base.groupby("Month", as_index=False)[
+            [
+                "Sev2_Attempted",
+                "Sev2_Contributed",
+                "Sev3_Attempted",
+                "Sev3_Resolved_RCA",
+            ]
+        ]
+        .sum()
+    )
+
+    monthly_summary["Attempted"] = (
+        monthly_summary["Sev2_Attempted"]
+        + monthly_summary["Sev3_Attempted"]
+    )
+
+    monthly_summary["Resolved"] = (
+        monthly_summary["Sev2_Contributed"]
+        + monthly_summary["Sev3_Resolved_RCA"]
+    )
+
+    team_month_resolved = (
+        pod_year_mv.groupby("Month", as_index=False)["L1 Resolved"]
+        .sum()
+        .rename(columns={"L1 Resolved": "Team Resolved"})
+    )
+
+    monthly_summary = monthly_summary.merge(
+        team_month_resolved,
+        on="Month",
+        how="left",
+    )
+
+    monthly_summary["Efficiency %"] = (
+        monthly_summary["Resolved"]
+        / monthly_summary["Attempted"].replace(0, pd.NA)
+        * 100
+    ).fillna(0).round(1)
+
+    monthly_summary["Team Contribution %"] = (
+        monthly_summary["Resolved"]
+        / monthly_summary["Team Resolved"].replace(0, pd.NA)
+        * 100
+    ).fillna(0).round(1)
+
+    monthly_summary["Month"] = pd.Categorical(
+        monthly_summary["Month"].astype(str),
+        categories=MONTH_ORDER,
+        ordered=True,
+    )
+
+    monthly_summary = monthly_summary.sort_values("Month")
+    monthly_summary["Month"] = monthly_summary["Month"].astype(str)
+
+    # -------------------------------
+    # Severity Efficiency Table
+    # -------------------------------
+    severity_summary = pd.DataFrame(
+        [
+            {
+                "Severity": "Sev 3",
+                "Attempted": sev3_attempted,
+                "Resolved": sev3_resolved,
+                "Efficiency %": _safe_pct_num(sev3_resolved, sev3_attempted),
+            },
+            {
+                "Severity": "Sev 2",
+                "Attempted": sev2_attempted,
+                "Resolved": sev2_resolved,
+                "Efficiency %": _safe_pct_num(sev2_resolved, sev2_attempted),
+            },
+            {
+                "Severity": "Overall",
+                "Attempted": total_attempted,
+                "Resolved": total_resolved,
+                "Efficiency %": resolution_efficiency_pct,
+            },
+        ]
     )
 
     # -------------------------------
@@ -2574,12 +2600,12 @@ with tab5:
 <div style="font-size:18px;color:#bbf7d0;font-weight:800;">💡 Individual Impact Created — {report_scope}</div>
 
 <div style="font-size:58px;font-weight:900;color:white;line-height:1;margin-top:12px;">
-{overall_contribution_pct:.1f}% contribution to team resolution
+{resolution_efficiency_pct:.1f}% Resolution Efficiency
 </div>
 
 <div style="margin-top:16px;color:#dcfce7;font-size:17px;font-weight:600;">
-{selected_person_label} resolved <b>{indiv_total_resolved}</b> of <b>{team_total_received}</b> team issues,
-including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_sev2_resolved}/{team_sev2_received}</b> Sev-2 issues.
+{selected_person_label} resolved <b>{total_resolved}</b> of <b>{total_attempted}</b> attempted issues,
+contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resolutions.
 </div>
 </div>"""
 
@@ -2589,105 +2615,189 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
     # KPI Cards
     # -------------------------------
     k1, k2, k3, k4 = st.columns(4)
+
     with k1:
         _mv_card(
-            "TEAM TOTAL ISSUES",
-            team_total_received,
-            "Sev 2 + Sev 3 received",
+            "TOTAL ATTEMPTED",
+            total_attempted,
+            "Sev 2 + Sev 3 owned",
             "#ffffff",
-            "🚨",
+            "🎯",
         )
-    
+
     with k2:
         _mv_card(
-            "INDIVIDUAL RESOLVED",
-            indiv_total_resolved,
-            f"{overall_contribution_pct:.1f}% of team issues",
+            "TOTAL RESOLVED",
+            total_resolved,
+            "Resolved within L1",
             "#4ade80",
             "✅",
         )
-    
+
     with k3:
         _mv_card(
-            "SEV-3 CONTRIBUTION",
-            f"{indiv_sev3_resolved} / {team_sev3_received}",
-            f"{sev3_contribution_pct:.1f}% of team Sev-3",
-            "#60a5fa",
-            "📘",
+            "RESOLUTION EFFICIENCY",
+            f"{resolution_efficiency_pct:.1f}%",
+            "Resolved / Attempted",
+            "#93c5fd",
+            "📈",
         )
-    
+
     with k4:
         _mv_card(
-            "SEV-2 CONTRIBUTION",
-            f"{indiv_sev2_resolved} / {team_sev2_received}",
-            f"{sev2_contribution_pct:.1f}% of team Sev-2",
-            "#a78bfa",
-            "📕",
+            "TEAM CONTRIBUTION",
+            f"{team_contribution_pct:.1f}%",
+            "Share of team L1 resolved",
+            "#c084fc",
+            "🤝",
         )
 
     st.divider()
 
     # -------------------------------
-    # Individual Contribution Graphics
+    # Executive Summary
     # -------------------------------
-    st.subheader("👤 Individual Contribution Graphics")
+    st.markdown("## 🧠 Executive Summary")
 
-    chart_people = (
-        alt.Chart(people_master)
-        .mark_bar(cornerRadiusTopRight=5, cornerRadiusBottomRight=5)
-        .encode(
-            x=alt.X(
-                "Total Contribution:Q",
-                title="Total Contribution",
-            ),
-            y=alt.Y(
-                "Name:N",
-                sort="-x",
-                title=None,
-            ),
-            tooltip=[
-                alt.Tooltip("Name:N", title="Person"),
-                alt.Tooltip("Sev3_Resolved_RCA:Q", title="Sev-3"),
-                alt.Tooltip("Sev2_Contributed:Q", title="Sev-2"),
-                alt.Tooltip("Total Contribution:Q", title="Total"),
-            ],
-        )
-        .properties(height=280)
+    st.markdown(
+        f"""
+        <div style="
+            border:1px solid rgba(255,255,255,0.14);
+            border-radius:16px;
+            padding:18px 22px;
+            background:rgba(255,255,255,0.04);
+            font-size:17px;
+            line-height:1.6;
+        ">
+            <b>{selected_person_label}</b> attempted <b>{total_attempted}</b> issues and resolved
+            <b>{total_resolved}</b> within L1, delivering a
+            <b>{resolution_efficiency_pct:.1f}%</b> resolution efficiency and contributing
+            <b>{team_contribution_pct:.1f}%</b> to the team's total L1 resolved volume.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-
-    st.altair_chart(chart_people, use_container_width=True)
 
     st.divider()
 
     # -------------------------------
-    # People Performance Table
+    # Trend Charts
     # -------------------------------
-    st.subheader("👥 People Performance")
+    st.markdown("## 📈 Individual Performance Trends")
 
-    export_people = people_master.rename(
-        columns={
-            "Name": "Person",
-            "Sev2_Contributed": "Sev-2 Resolved",
-            "Sev3_Resolved_RCA": "Sev-3 Resolved",
-            "Total Contribution": "Total",
-        }
-    )
+    t1, t2 = st.columns(2)
 
-    export_people = export_people[
+    with t1:
+        st.markdown("### 📈 Resolution Efficiency Trend")
+
+        efficiency_chart = (
+            alt.Chart(monthly_summary)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                y=alt.Y(
+                    "Efficiency %:Q",
+                    title="Efficiency %",
+                    scale=alt.Scale(domain=[0, 100]),
+                ),
+                tooltip=[
+                    "Month",
+                    alt.Tooltip("Attempted:Q", title="Attempted"),
+                    alt.Tooltip("Resolved:Q", title="Resolved"),
+                    alt.Tooltip("Efficiency %:Q", title="Efficiency %", format=".1f"),
+                ],
+            )
+            .properties(height=300)
+        )
+
+        st.altair_chart(efficiency_chart, use_container_width=True)
+
+    with t2:
+        st.markdown("### 🤝 Team Contribution Trend")
+
+        contribution_chart = (
+            alt.Chart(monthly_summary)
+            .mark_line(point=True)
+            .encode(
+                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                y=alt.Y(
+                    "Team Contribution %:Q",
+                    title="Contribution %",
+                ),
+                tooltip=[
+                    "Month",
+                    alt.Tooltip("Resolved:Q", title="Resolved"),
+                    alt.Tooltip("Team Resolved:Q", title="Team Resolved"),
+                    alt.Tooltip("Team Contribution %:Q", title="Contribution %", format=".1f"),
+                ],
+            )
+            .properties(height=300)
+        )
+
+        st.altair_chart(contribution_chart, use_container_width=True)
+
+    st.divider()
+
+    # -------------------------------
+    # Monthly Summary Table
+    # -------------------------------
+    st.markdown("## 📋 Monthly Performance Summary")
+
+    monthly_table = monthly_summary[
         [
-            "Person",
-            "Sev-3 Resolved",
-            "Sev-2 Resolved",
-            "Total",
+            "Month",
+            "Attempted",
+            "Resolved",
+            "Efficiency %",
+            "Team Contribution %",
         ]
     ].copy()
 
     st.dataframe(
-        export_people,
+        _format_pct_col(monthly_table, ["Efficiency %", "Team Contribution %"]),
         use_container_width=True,
         hide_index=True,
-        height=(len(export_people) + 1) * 35,
     )
+
+    st.divider()
+
+    # -------------------------------
+    # Severity Summary
+    # -------------------------------
+    st.markdown("## 📊 Severity-wise Resolution Efficiency")
+
+    s1, s2 = st.columns([1, 1])
+
+    with s1:
+        severity_chart = (
+            alt.Chart(severity_summary[severity_summary["Severity"] != "Overall"])
+            .mark_bar(cornerRadiusTopRight=6, cornerRadiusTopLeft=6)
+            .encode(
+                x=alt.X("Severity:N", title=None),
+                y=alt.Y(
+                    "Efficiency %:Q",
+                    title="Efficiency %",
+                    scale=alt.Scale(domain=[0, 100]),
+                ),
+                tooltip=[
+                    "Severity",
+                    "Attempted",
+                    "Resolved",
+                    alt.Tooltip("Efficiency %:Q", format=".1f"),
+                ],
+            )
+            .properties(height=260)
+        )
+
+        st.altair_chart(severity_chart, use_container_width=True)
+
+    with s2:
+        st.dataframe(
+            _format_pct_col(severity_summary, ["Efficiency %"]),
+            use_container_width=True,
+            hide_index=True,
+            height=(len(severity_summary) + 1) * 35,
+        )
 
     # =========================================================
     # LANDSCAPE EXPORT VIEW FOR PNG
@@ -2701,7 +2811,7 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
             if indiv_month_filter == "All"
             else indiv_month_filter.upper()
         )
-        
+
         export_people_label = (
             "ALL PEOPLE"
             if len(indiv_people_filter) != 1
@@ -2711,75 +2821,100 @@ including <b>{indiv_sev3_resolved}/{team_sev3_received}</b> Sev-3 and <b>{indiv_
         st.markdown(
             f"""
 <div style="padding-top:10px;padding-bottom:10px;">
-
 <h1 style="font-size:52px;margin-bottom:8px;font-weight:900;">
 👤 Individual Performance — {selected_year} | {export_month_label} | {export_people_label}
 </h1>
-
 <div style="font-size:20px;color:#AEB6C1;margin-bottom:25px;">
-Individual performance snapshot showing L1 ownership, severity contribution, and issue resolution.
+Ownership, resolution efficiency, team contribution, and severity-wise performance.
 </div>
-
-</div>
-
-<div style="
-background:linear-gradient(90deg,#052e16,#065f46,#0f766e);
-padding:28px;
-border-radius:18px;
-border:1px solid rgba(74,222,128,0.35);
-margin-bottom:25px;
-">
-
-<div style="font-size:24px;font-weight:800;color:#bbf7d0;">
-💡 Individual Impact Created — {report_scope}
-</div>
-
-<div style="font-size:58px;font-weight:950;line-height:1;color:white;margin-top:12px;">
-{l1_total} issues resolved within L1
-</div>
-
-<div style="margin-top:15px;font-size:22px;color:#dcfce7;font-weight:650;">
-{selected_person_label} contributed to <b>{sev3_total}</b> Sev-3 and <b>{sev2_total}</b> Sev-2 resolutions.
-</div>
-
 </div>
             """,
             unsafe_allow_html=True,
         )
 
+        st.markdown(banner_html, unsafe_allow_html=True)
+
         k1, k2, k3, k4 = st.columns(4)
 
         with k1:
-            st.metric("🚨 Total Contribution", f"{total_issues}")
+            st.metric("🎯 Attempted", total_attempted)
         with k2:
-            st.metric("✅ Sev-3 Resolved", f"{sev3_total}")
+            st.metric("✅ Resolved", total_resolved)
         with k3:
-            st.metric("⬆️ Sev-2 Resolved", f"{sev2_total}")
+            st.metric("📈 Efficiency", f"{resolution_efficiency_pct:.1f}%")
         with k4:
-            st.metric("🥇 Selected People", selected_person_label)
+            st.metric("🤝 Team Contribution", f"{team_contribution_pct:.1f}%")
 
         st.divider()
 
-        st.subheader("👥 People Performance")
-
-        st.dataframe(
-            export_people,
-            use_container_width=True,
-            hide_index=True,
-            height=(len(export_people) + 1) * 35,
+        st.markdown("## 🧠 Executive Summary")
+        st.markdown(
+            f"""
+            <div style="
+                border:1px solid rgba(255,255,255,0.14);
+                border-radius:16px;
+                padding:18px 22px;
+                background:rgba(255,255,255,0.04);
+                font-size:17px;
+                line-height:1.6;
+            ">
+                <b>{selected_person_label}</b> attempted <b>{total_attempted}</b> issues and resolved
+                <b>{total_resolved}</b> within L1, delivering a
+                <b>{resolution_efficiency_pct:.1f}%</b> resolution efficiency and contributing
+                <b>{team_contribution_pct:.1f}%</b> to the team's total L1 resolved volume.
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
+        st.divider()
+
+        st.markdown("## 📈 Individual Performance Trends")
+
+        et1, et2 = st.columns(2)
+
+        with et1:
+            st.markdown("### 📈 Resolution Efficiency Trend")
+            st.altair_chart(efficiency_chart, use_container_width=True)
+
+        with et2:
+            st.markdown("### 🤝 Team Contribution Trend")
+            st.altair_chart(contribution_chart, use_container_width=True)
+
+        st.divider()
+
+        mt1, mt2 = st.columns([1.2, 1])
+
+        with mt1:
+            st.markdown("### 📋 Monthly Performance Summary")
+            st.dataframe(
+                _format_pct_col(monthly_table, ["Efficiency %", "Team Contribution %"]),
+                use_container_width=True,
+                hide_index=True,
+                height=(len(monthly_table) + 1) * 35,
+            )
+
+        with mt2:
+            st.markdown("### 📊 Severity-wise Efficiency")
+            st.dataframe(
+                _format_pct_col(severity_summary, ["Efficiency %"]),
+                use_container_width=True,
+                hide_index=True,
+                height=(len(severity_summary) + 1) * 35,
+            )
+
         st.markdown('<div id="individual-export-end"></div>', unsafe_allow_html=True)
+
     # =========================================================
     # EXPORT SECTION
     # =========================================================
     st.divider()
-    st.subheader("⬇️ Export Master View")
+    st.subheader("⬇️ Export Individual View")
 
     components.html(
         """
         <div style="display:flex; gap:10px;">
-            <button onclick="exportMasterPNG()" style="
+            <button onclick="exportIndividualPNG()" style="
                 padding:10px 16px;
                 border-radius:8px;
                 border:1px solid #888;
@@ -2788,16 +2923,6 @@ margin-bottom:25px;
                 background:#111827;
                 color:white;
             ">⬇️ Export PNG</button>
-
-            <button onclick="exportMasterPDF()" style="
-                padding:10px 16px;
-                border-radius:8px;
-                border:1px solid #888;
-                cursor:pointer;
-                font-weight:700;
-                background:#111827;
-                color:white;
-            ">⬇️ Export PDF</button>
         </div>
 
         <script>
@@ -2818,7 +2943,6 @@ margin-bottom:25px;
 
         async function ensureLibraries() {
             await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
         }
 
         function getMainContainer() {
@@ -2878,7 +3002,7 @@ margin-bottom:25px;
             return cropCanvas;
         }
 
-        async function exportMasterPNG() {
+        async function exportIndividualPNG() {
             await ensureLibraries();
 
             const doc = window.parent.document;
@@ -2888,7 +3012,7 @@ margin-bottom:25px;
 
             const expanderNode = allNodes.find(el =>
                 el.innerText &&
-                el.innerText.includes("Landscape Export View for PNG")
+                el.innerText.includes("Individual Export View for PNG")
             );
 
             if (expanderNode) {
@@ -2905,11 +3029,11 @@ margin-bottom:25px;
                 }
             }
 
-            const startMarker = doc.getElementById("landscape-export-start");
-            const endMarker = doc.getElementById("landscape-export-end");
+            const startMarker = doc.getElementById("individual-export-start");
+            const endMarker = doc.getElementById("individual-export-end");
 
             if (!startMarker || !endMarker) {
-                alert("Could not find Landscape Export markers.");
+                alert("Could not find Individual Export markers.");
                 return;
             }
 
@@ -2923,125 +3047,9 @@ margin-bottom:25px;
             const canvas = await captureElementRegion(main, startY, endY);
 
             const link = window.parent.document.createElement("a");
-            link.download = "l1_ops_master_view_landscape.png";
+            link.download = "individual_performance_view.png";
             link.href = canvas.toDataURL("image/png");
             link.click();
-        }
-
-        async function addCanvasAsPDFPage(pdf, canvas) {
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-
-            const margin = 24;
-            const maxWidth = pageWidth - (margin * 2);
-            const maxHeight = pageHeight - (margin * 2);
-
-            const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
-
-            const imgWidth = canvas.width * ratio;
-            const imgHeight = canvas.height * ratio;
-
-            const x = (pageWidth - imgWidth) / 2;
-            const y = (pageHeight - imgHeight) / 2;
-
-            pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, imgWidth, imgHeight);
-        }
-
-        async function captureSectionByHeading(headingTexts, nextHeadingTexts) {
-            const doc = window.parent.document;
-            const main = getMainContainer();
-            const allHeadings = [...doc.querySelectorAll("h1, h2, h3")];
-
-            const startHeading = allHeadings.find(el =>
-                el.innerText &&
-                headingTexts.some(t => el.innerText.includes(t))
-            );
-
-            if (!startHeading) return null;
-
-            let endHeading = null;
-
-            for (const h of allHeadings) {
-                if (!h.innerText) continue;
-
-                const isAfter =
-                    h.getBoundingClientRect().top >
-                    startHeading.getBoundingClientRect().top;
-
-                const matchesNext =
-                    nextHeadingTexts.some(t => h.innerText.includes(t));
-
-                if (isAfter && matchesNext) {
-                    endHeading = h;
-                    break;
-                }
-            }
-
-            const mainRect = main.getBoundingClientRect();
-            const startRect = startHeading.getBoundingClientRect();
-
-            const startY = Math.max(0, startRect.top - mainRect.top - 18);
-
-            let endY;
-
-            if (endHeading) {
-                endY = endHeading.getBoundingClientRect().top - mainRect.top - 20;
-            } else {
-                const exportHeading = allHeadings.find(el =>
-                    el.innerText && el.innerText.includes("Export Master View")
-                );
-
-                endY = exportHeading
-                    ? exportHeading.getBoundingClientRect().top - mainRect.top - 30
-                    : main.scrollHeight;
-            }
-
-            return await captureElementRegion(main, startY, endY);
-        }
-
-        async function exportMasterPDF() {
-            await ensureLibraries();
-
-            const { jsPDF } = window.parent.jspdf;
-            const pdf = new jsPDF("landscape", "pt", "a4");
-
-            const sections = [
-                {
-                    title: ["L1 Ops Master Performance View"],
-                    next: ["POD Performance Command Center", "Leadership Trend View", "Compact Summary", "Landscape Export View for PNG", "Export Master View"]
-                },
-                {
-                    title: ["POD Performance Command Center"],
-                    next: ["Leadership Trend View", "Compact Summary", "Landscape Export View for PNG", "Export Master View"]
-                },
-                {
-                    title: ["Leadership Trend View"],
-                    next: ["Compact Summary", "Landscape Export View for PNG", "Export Master View"]
-                },
-                {
-                    title: ["Compact Summary"],
-                    next: ["Landscape Export View for PNG", "Export Master View"]
-                }
-            ];
-
-            let added = 0;
-
-            for (const section of sections) {
-                const canvas = await captureSectionByHeading(section.title, section.next);
-
-                if (canvas && canvas.height > 50) {
-                    if (added > 0) pdf.addPage();
-                    await addCanvasAsPDFPage(pdf, canvas);
-                    added += 1;
-                }
-            }
-
-            if (added === 0) {
-                alert("No sections found to export.");
-                return;
-            }
-
-            pdf.save("l1_ops_master_view_sectioned.pdf");
         }
         </script>
         """,
