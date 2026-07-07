@@ -2720,7 +2720,7 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
             alt.Chart(monthly_summary)
             .mark_line(point=True)
             .encode(
-                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                x=alt.X("Month:N", sort=list(monthly_summary["Month"]), title=None),
                 y=alt.Y(
                     "Efficiency %:Q",
                     title="Efficiency %",
@@ -2745,7 +2745,7 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
             alt.Chart(monthly_summary)
             .mark_line(point=True)
             .encode(
-                x=alt.X("Month:N", sort=MONTH_ORDER, title=None),
+                x=alt.X("Month:N", sort=list(monthly_summary["Month"]), title=None),
                 y=alt.Y(
                     "Team Contribution %:Q",
                     title="Contribution %",
