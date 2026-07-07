@@ -2408,7 +2408,33 @@ with tab5:
             people_year[c],
             errors="coerce",
         ).fillna(0).astype(int)
-
+        
+    people_year["Attempted"] = (
+        people_year["Sev2_Attempted"] +
+        people_year["Sev3_Attempted"]
+    )
+    
+    people_year["Resolved"] = (
+        people_year["Sev2_Contributed"] +
+        people_year["Sev3_Resolved_RCA"]
+    )
+    
+    # Keep only months that have actual data
+    people_year = people_year[
+        (people_year["Attempted"] > 0) |
+        (people_year["Resolved"] > 0)
+    ].copy()
+    
+    # Month order
+    people_year["Month"] = people_year["Month"].astype(str).str.upper()
+    
+    people_year["Month"] = pd.Categorical(
+        people_year["Month"],
+        categories=MONTH_ORDER,
+        ordered=True,
+    )
+    
+    people_year = people_year.sort_values("Month")
     # -------------------------------
     # Filters
     # -------------------------------
