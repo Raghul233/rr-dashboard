@@ -2638,7 +2638,7 @@ contributing <b>{team_contribution_pct:.1f}%</b> of the team's total L1 resoluti
         _mv_card(
             "RESOLUTION EFFICIENCY",
             f"{resolution_efficiency_pct:.1f}%",
-            "Resolved / Attempted",
+            "Resolved %",
             "#93c5fd",
             "📈",
         )
