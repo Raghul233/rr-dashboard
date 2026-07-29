@@ -1044,13 +1044,13 @@ with tab4:
     l1_pct = round((l1_total / total_issues * 100), 1) if total_issues else 0
     l2_pct = round((l2_total / total_issues * 100), 1) if total_issues else 0
 
-    # L1 resolved split
+    # Overall L1 severity split
     l1_sev2 = int(mv_view["Sev2_Contributed"].sum())
     l1_sev3 = int(mv_view["Sev3_Resolved_RCA"].sum())
-
-    # Moved to L2 split
-    l2_sev2 = sev2_total - l1_sev2
-    l2_sev3 = sev3_total - l1_sev3
+    
+    # Overall L2 severity split
+    l2_sev2 = max(sev2_total - l1_sev2, 0)
+    l2_sev3 = max(sev3_total - l1_sev3, 0)
 
     pod_master = (
         mv_view.groupby("PODS", as_index=False)[
@@ -1146,7 +1146,7 @@ L1 Ops resolved <b>{l1_total}</b> of <b>{total_issues}</b> total issues, reducin
     with k2:
         _mv_card("L1 RESOLVED", l1_total, f"Sev-3: {l1_sev3} | Sev-2: {l1_sev2}<br>{l1_pct:.1f}% within L1", "#4ade80", "✅")
     with k3:
-        _mv_card("MOVED TO L2", l2_total, f"Sev-3: {l1_sev3} | Sev-2: {l1_sev2}<br>{l1_pct:.1f}% within L1", "#fbbf24", "⬆️")
+        _mv_card("MOVED TO L2", l2_total, f"Sev-3: {l2_sev3} | Sev-2: {l2_sev2}<br>{l2_pct:.1f}% escalated", "#fbbf24", "⬆️")
     with k4:
         _mv_card("SEVERITY SPLIT", f"{sev2_total} / {sev3_total}", "Sev 2 / Sev 3", "#93c5fd", "📊")
     with k5:
